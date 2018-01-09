@@ -26,7 +26,7 @@
                               <identifier>
                               <big-letter-name>
                               <arith-sym>
-                              PLUSPLUS COLON
+                              PLUSPLUS COLON SEMICOLON
                               OPENB CLOSEB OPENSB CLOSESB COMMA
                               IF THEN ELSE
                               LAMBDA ARROW
@@ -46,6 +46,7 @@
    ["]" (token-CLOSESB 'closesb)]
    ["," (token-COMMA 'comma)]
    [":" (token-COLON ':)]
+   [";" (token-SEMICOLON 'semicolon)]
    ["=" (token-EQUALS '=)]
    ["\\" (token-LAMBDA '\\)]
    ["->" (token-ARROW '->)]
@@ -77,25 +78,35 @@
 
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Grammar ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
    (grammar
-    [<program> [(<expression>) (a-program $1)]]
+    [<program> [(<global-expression> <global-expressions>) (a-program (cons $1 $2))]]
 
     [<identifiers>  [() '()]
                     [(<identifier> <identifiers>) (cons $1 $2)]]
+
+    [<global-expression>  [(<expression>) $1]
+                          [(<declaration-exp>) $1]]
+
+    [<global-expressions> [() '()]
+                          [(SEMICOLON <global-expression> <global-expressions>) (cons $2 $3)]]
+
     ;; expression
-    [<expression> [(<integer>) (const-exp $1)]
-                  [(<boolean>) (bool-exp $1)]
-                  [(<undefined>) (undefined-exp)]
-                  [(<identifier>) (var-exp $1)]
-                  [(OPENSB <list-exp> CLOSESB) (list-exp $2)]
+    [<expression> [(<identifier>) (var-exp $1)]
                   [(HEAD <expression>) (head-exp $2)]
                   [(TAIL <expression>) (tail-exp $2)]
                   [(OPENB <expression> CLOSEB) $2]
+                  [(<value-exp>) $1]
                   [(<if-exp>) $1]
                   [(<lambda-exp>) $1]
                   [(<call-exp>) $1]
                   [(<let-exp>) $1]
                   [(<infix-operator>) $1]
                   [(<data-exp>) $1]]
+
+    ;; value
+    [<value-exp>  [(<integer>) (const-exp $1)]
+                  [(<boolean>) (bool-exp $1)]
+                  [(<undefined>) (undefined-exp)]
+                  [(OPENSB <list-exp> CLOSESB) (list-exp $2)]]
 
     ;; if
     [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
@@ -136,6 +147,17 @@
     [<types> [() '()]
              [(<big-letter-name> <types>) (cons $1 $2)]]
 
+    ;; global delarations
+    [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]]
+
+    [<argument> [(<value-exp>) $1]
+                [(<big-letter-name>) (unpack-exp $1 '())]
+                [(OPENB <big-letter-name> <arguments> CLOSEB) (unpack-exp $2 $3)]
+                [(<identifier>) (var-exp $1)]]
+
+    [<arguments>  [() '()]
+                  [(<argument> <arguments>) (cons $1 $2)]]
+
     )))
 
 
@@ -150,4 +172,10 @@
 
 (scan&parse "data Tree = Empty | Leaf Int | Node Tree Tree")
 
-(scan&parse "[] ++ [x, 5,   10]")
+(scan&parse "[] ++ [x, 5, 10]")
+
+(scan&parse "f 0 = 1; f n = n * (factorial (n - 1))")
+
+(scan&parse "rev acc [] = acc; rev acc xs = rev ((head xs):acc) xs")
+
+(scan&parse "f Leaf = 0; f (Node l x r) = (f l) + x + (f r)")

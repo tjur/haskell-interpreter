@@ -5,7 +5,7 @@
 (define-datatype
   program
   program?
-  (a-program (a-program-exp expression?)))
+  (a-program (a-program-exp (list-of expression?))))
 
 (define-datatype
   expression
@@ -24,8 +24,8 @@
     (vars (list-of symbol?))
     (body expression?))
   (call-exp
-   (rator expression?)
-   (rand (list-of expression?)))
+    (rator expression?)
+    (rand (list-of expression?)))
   (let-exp
     (var symbol?)
     (args (list-of symbol?))
@@ -46,8 +46,15 @@
     (exp1 expression?)
     (exp2 expression?))
   (data-exp
-   (type-constr symbol?)
-   (val-constrs (list-of val-constr-exp?))))
+    (type-constr symbol?)
+    (val-constrs (list-of val-constr-exp?)))
+  (unpack-exp
+    (val-constr symbol?)
+    (values (list-of expression?)))
+  (declaration-exp
+    (var symbol?)
+    (arguments (list-of expression?))
+    (body expression?)))
 
 (define-datatype
   val-constr-exp
