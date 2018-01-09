@@ -115,7 +115,12 @@
     [<lambda-exp> [(LAMBDA <identifier> <identifiers> ARROW <expression>) (lambda-exp (cons $2 $3) $5)]]
 
     ;; let
-    [<let-exp> [(LET <identifier> <identifiers> EQUALS <expression> IN <expression>) (let-exp $2 $3 $5 $7)]]
+    [<let-exp> [(LET <let-def> <let-defs> IN <expression>) (make-let-exp (cons3 $2 $3) $5)]]
+
+    [<let-def> [(<identifier> <identifiers> EQUALS <expression>) (list $1 $2 $4)]]
+
+    [<let-defs> [() (list '() '() '())]
+               [(<let-def> <let-defs>) (cons3 $1 $2)]]
 
     ;; application
     [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]]
@@ -161,12 +166,32 @@
     )))
 
 
+;; auxiliary procedures
+(define cons3
+  (lambda (xs xss)
+    (list
+     (cons (list-ref xs 0) (list-ref xss 0))
+     (cons (list-ref xs 1) (list-ref xss 1))
+     (cons (list-ref xs 2) (list-ref xss 2)))))
+
+(define make-let-exp
+  (lambda (let-defs let-body)
+    (let-exp
+     (list-ref let-defs 0)
+     (list-ref let-defs 1)
+     (list-ref let-defs 2)
+     let-body)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define scan&parse
   (lambda (str)
     (let ([p (open-input-string str)])
       (parse (lambda () (lex p))))))
 
-(scan&parse "let f x = x in (f 5)")
+(scan&parse "let f a b = let z = a + b in z
+                 g y s = s+y
+                 y = 42 in (f 5)")
 
 (scan&parse "\\x y -> (x + y)")
 
