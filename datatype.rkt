@@ -5,14 +5,17 @@
 (define-datatype
   program
   program?
-  (a-program (a-program27 expression?)))
+  (a-program (a-program-exp expression?)))
 
 (define-datatype
-  expression
-  expression?
-  (const-exp (const-exp28 number?))
-  (var-exp (var-exp29 symbol?))
+  expression expression?
+  (const-exp (const number?))
+  (bool-exp (bool boolean?))
+  (var-exp (var symbol?))
   (if-exp
-   (if-exp30 expression?)
-   (if-exp31 expression?)
-   (if-exp32 expression?)))
+   (if-exp1 expression?)
+   (if-exp2 expression?)
+   (if-exp3 expression?))
+  (lambda-exp
+   (var symbol?)
+   (body expression?)))

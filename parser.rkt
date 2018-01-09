@@ -16,21 +16,32 @@
   [lex:comment (:: (:* lex:whitespace) "--" (:* (:~ #\newline)) #\newline)])
 
 (define-tokens non-terminals (
+                              <integer>
+                              <boolean>
+                              <identifier>
                               PLUS MINUS TIMES
-                              EOF
-                              IF THEN ELSE))
+                              IF THEN ELSE
+                              LAMBDA ARROW
+                              LET IN EQUALS
+                              EOF))
 
   
 (define lex
   (lexer
-   ["+" (token-PLUS '+)]
-   ["-" (token-MINUS '-)]
-   ["*" (token-TIMES '*)]
+   ["True" (token-<boolean> #t)]
+   ["False" (token-<boolean> #f)]
+   [(:: (:? #\-) (:+ lex:digit)) (token-<integer> (string->number lexeme))] ;; integer regexp
    ["if" (token-IF 'if)]
    ["then" (token-THEN 'then)]
    ["else" (token-ELSE 'else)]
+   ["\\" (token-LAMBDA '\\)]
+   ["->" (token-ARROW '->)]
+   ["let" (token-LET 'let)]
+   ["in" (token-IN 'in)]
+   ["=" (token-EQUALS '=)]
    [whitespace (lex input-port)] ;; skip whitespace
    [lex:comment (lex input-port)] ;; skip comment
+   [(:: lex:letter (:* (:or lex:letter lex:digit))) (token-<identifier> (string->symbol lexeme))] ;; identifier regexp
    [(eof) (token-EOF 'eof)]))
   
 (define parse
@@ -41,15 +52,21 @@
    (error (lambda (a b stx) 
             (error 'parse "failed at ~s" stx)))
    (grammar [<program> [(<expression>) (a-program $1)]]
-            [<expression> [(PLUS) (var-exp '+)]
-                          [(MINUS) (var-exp '-)]
-                          [(TIMES) (var-exp '*)]
-                          [(<if-exp>) $1]]
+            
+            [<expression> [(<integer>) (const-exp $1)]
+                          [(<boolean>) (bool-exp $1)]
+                          [(<identifier>) (var-exp $1)]
+                          [(<if-exp>) $1]
+                          [(<lambda-exp>) $1]
+                          [(<let-exp>) $1]]
+            
             [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
+
+            [<lambda-exp> [(LAMBDA <identifier> ARROW <expression>) (lambda-exp $2 $4)]]
+
+             
 
             )))
 
-(let ([p (open-input-string "if +
-                                then - --komentarz
-                                else *")])
+(let ([p (open-input-string "if True then 42 else 100")])
   (parse (lambda () (lex p))))
