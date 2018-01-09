@@ -18,7 +18,8 @@
 (define-tokens non-terminals (
                               PLUS MINUS TIMES
                               EOF
-                              IF THEN ELSE))
+                              IF THEN ELSE
+                              OPENSB CLOSESB COMMA))
 
   
 (define lex
@@ -29,6 +30,9 @@
    ["if" (token-IF 'if)]
    ["then" (token-THEN 'then)]
    ["else" (token-ELSE 'else)]
+   ["[" (token-OPENSB 'opensb)]
+   ["]" (token-CLOSESB 'closesb)]
+   ["," (token-COMMA 'comma)]
    [whitespace (lex input-port)] ;; skip whitespace
    [lex:comment (lex input-port)] ;; skip comment
    [(eof) (token-EOF 'eof)]))
@@ -44,12 +48,14 @@
             [<expression> [(PLUS) (var-exp '+)]
                           [(MINUS) (var-exp '-)]
                           [(TIMES) (var-exp '*)]
-                          [(<if-exp>) $1]]
+                          [(<if-exp>) $1]
+                          [(OPENSB <list-exp> CLOSESB) (list-exp $2)]]
             [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
+            [<list-exp> [() (empty-list-exp)]
+                        [(<expression>) (cons-list-exp $1 (empty-list-exp))]
+                        [(<expression> COMMA <list-exp>) (cons-list-exp $1 $3)]]
 
             )))
 
-(let ([p (open-input-string "if +
-                                then - --komentarz
-                                else *")])
+(let ([p (open-input-string "[+,    -, +, if + then - else *]")])
   (parse (lambda () (lex p))))
