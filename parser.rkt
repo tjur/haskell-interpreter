@@ -16,23 +16,27 @@
   [lex:comment (:: (:* lex:whitespace) "--" (:* (:~ #\newline)) #\newline)])
 
 (define-tokens non-terminals (
-                              PLUS MINUS TIMES
+                              <arith-sym>
+                              PLUSPLUS COLON
                               EOF
                               IF THEN ELSE
-                              OPENSB CLOSESB COMMA))
+                              OPENSB CLOSESB COMMA
+                              HEAD TAIL))
 
   
 (define lex
   (lexer
-   ["+" (token-PLUS '+)]
-   ["-" (token-MINUS '-)]
-   ["*" (token-TIMES '*)]
-   ["if" (token-IF 'if)]
-   ["then" (token-THEN 'then)]
-   ["else" (token-ELSE 'else)]
+   ["++" (token-PLUSPLUS '++)]
+   [(:or "+" "-" "/" "*") (token-<arith-sym> (string->symbol lexeme))]
    ["[" (token-OPENSB 'opensb)]
    ["]" (token-CLOSESB 'closesb)]
    ["," (token-COMMA 'comma)]
+   [":" (token-COLON ':)]
+   ["if" (token-IF 'if)]
+   ["then" (token-THEN 'then)]
+   ["else" (token-ELSE 'else)]
+   ["head" (token-HEAD 'head)]
+   ["tail" (token-TAIL 'tail)]
    [whitespace (lex input-port)] ;; skip whitespace
    [lex:comment (lex input-port)] ;; skip comment
    [(eof) (token-EOF 'eof)]))
@@ -45,17 +49,20 @@
    (error (lambda (a b stx) 
             (error 'parse "failed at ~s" stx)))
    (grammar [<program> [(<expression>) (a-program $1)]]
-            [<expression> [(PLUS) (var-exp '+)]
-                          [(MINUS) (var-exp '-)]
-                          [(TIMES) (var-exp '*)]
+            [<expression> [(OPENSB <list-exp> CLOSESB) (list-exp $2)]
+                          [(HEAD <expression>) (head-exp $2)]
+                          [(TAIL <expression>) (tail-exp $2)]
                           [(<if-exp>) $1]
-                          [(OPENSB <list-exp> CLOSESB) (list-exp $2)]]
+                          [(<infix-operator>) $1]]
             [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
             [<list-exp> [() (empty-list-exp)]
                         [(<expression>) (cons-list-exp $1 (empty-list-exp))]
                         [(<expression> COMMA <list-exp>) (cons-list-exp $1 $3)]]
+            [<infix-operator> [(<expression> <arith-sym> <expression>) (arith-exp $2 $1 $3)]
+                              [(<expression> COLON <expression>) (cons-exp $1 $3)]
+                              [(<expression> PLUSPLUS <expression>) (append-exp $1 $3)]]
 
             )))
 
-(let ([p (open-input-string "[+,    -, +, if + then - else *]")])
+(let ([p (open-input-string "[] + []")])
   (parse (lambda () (lex p))))
