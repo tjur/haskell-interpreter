@@ -16,29 +16,42 @@
   [lex:comment (:: (:* lex:whitespace) "--" (:* (:~ #\newline)) #\newline)])
 
 (define-tokens non-terminals (
+                              <integer>
+                              <boolean>
+                              <identifier>
                               <arith-sym>
                               PLUSPLUS COLON
+                              OPENSB CLOSESB COMMA
                               EOF
                               IF THEN ELSE
-                              OPENSB CLOSESB COMMA
+                              LAMBDA ARROW
+                              LET IN EQUALS
                               HEAD TAIL))
-
   
 (define lex
   (lexer
    ["++" (token-PLUSPLUS '++)]
-   [(:or "+" "-" "/" "*") (token-<arith-sym> (string->symbol lexeme))]
    ["[" (token-OPENSB 'opensb)]
    ["]" (token-CLOSESB 'closesb)]
    ["," (token-COMMA 'comma)]
    [":" (token-COLON ':)]
+   ["=" (token-EQUALS '=)]
+   ["\\" (token-LAMBDA '\\)]
+   ["->" (token-ARROW '->)]
+   ["True" (token-<boolean> #t)]
+   ["False" (token-<boolean> #f)]
    ["if" (token-IF 'if)]
    ["then" (token-THEN 'then)]
    ["else" (token-ELSE 'else)]
+   ["let" (token-LET 'let)]
+   ["in" (token-IN 'in)]
    ["head" (token-HEAD 'head)]
    ["tail" (token-TAIL 'tail)]
+   [(:or "+" "-" "/" "*") (token-<arith-sym> (string->symbol lexeme))]
+   [(:: (:? #\-) (:+ lex:digit)) (token-<integer> (string->number lexeme))] ;; integer regexp
    [whitespace (lex input-port)] ;; skip whitespace
    [lex:comment (lex input-port)] ;; skip comment
+   [(:: lex:letter (:* (:or lex:letter lex:digit))) (token-<identifier> (string->symbol lexeme))] ;; identifier regexp
    [(eof) (token-EOF 'eof)]))
   
 (define parse
@@ -49,18 +62,27 @@
    (error (lambda (a b stx) 
             (error 'parse "failed at ~s" stx)))
    (grammar [<program> [(<expression>) (a-program $1)]]
-            [<expression> [(OPENSB <list-exp> CLOSESB) (list-exp $2)]
+            [<expression> [(<integer>) (const-exp $1)]
+                          [(<boolean>) (bool-exp $1)]
+                          [(<identifier>) (var-exp $1)]
+                          [(OPENSB <list-exp> CLOSESB) (list-exp $2)]
                           [(HEAD <expression>) (head-exp $2)]
                           [(TAIL <expression>) (tail-exp $2)]
                           [(<if-exp>) $1]
+                          [(<lambda-exp>) $1]
+                          ;;; [(<let-exp>) $1]
                           [(<infix-operator>) $1]]
             [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
+            [<lambda-exp> [(LAMBDA <identifier> ARROW <expression>) (lambda-exp $2 $4)]]
+
             [<list-exp> [() (empty-list-exp)]
                         [(<expression>) (cons-list-exp $1 (empty-list-exp))]
                         [(<expression> COMMA <list-exp>) (cons-list-exp $1 $3)]]
+
             [<infix-operator> [(<expression> <arith-sym> <expression>) (arith-exp $2 $1 $3)]
                               [(<expression> COLON <expression>) (cons-exp $1 $3)]
                               [(<expression> PLUSPLUS <expression>) (append-exp $1 $3)]]
+
 
             )))
 
