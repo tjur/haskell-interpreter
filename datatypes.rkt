@@ -44,7 +44,10 @@
     (exp2 expression?))
   (append-exp
     (exp1 expression?)
-    (exp2 expression?)))
+    (exp2 expression?))
+  (data-exp
+   (type-constr symbol?)
+   (val-constrs (list-of val-constr-exp?))))
 
 (define-datatype
   list-expression
@@ -53,3 +56,10 @@
   (cons-list-exp
     (head expression?)
     (tail list-expression?)))
+
+(define-datatype
+  val-constr-exp
+  val-constr-exp?
+  (val-constr
+    (name symbol?)
+    (types (list-of symbol?))))
