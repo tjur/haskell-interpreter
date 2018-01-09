@@ -15,15 +15,20 @@
   (undefined-exp)
   (var-exp (var symbol?))
   (if-exp
-   (if-exp1 expression?)
-   (if-exp2 expression?)
-   (if-exp3 expression?))
+    (if-exp1 expression?)
+    (if-exp2 expression?)
+    (if-exp3 expression?))
   (lambda-exp
-   (var symbol?)
-   (body expression?))
+    (var symbol?)
+    (body expression?))
   (call-exp
    (rator expression?)
    (rand (list-of expression?)))
+  (let-exp
+    (var symbol?)
+    (args (list-of symbol?))
+    (exp expression?)
+    (body expression?))
   (arith-exp
     (op symbol?)
     (exp1 expression?)

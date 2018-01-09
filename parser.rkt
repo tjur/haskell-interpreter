@@ -13,7 +13,8 @@
 (define-lex-abbrevs [lex:letter (:or (:/ #\a #\z) (:/ #\A #\Z))]
   [lex:digit (:/ #\0 #\9)]
   [lex:whitespace (:or #\newline #\return #\tab #\space #\vtab)]
-  [lex:comment (:: (:* lex:whitespace) "--" (:* (:~ #\newline)) #\newline)])
+  [lex:comment (:: (:* lex:whitespace) "--" (:* (:~ #\newline)) #\newline)]
+  [lex:identifier (:: lex:letter (:* (:or lex:letter lex:digit "_" "-")))])
 
 (define-tokens non-terminals (
                               <integer>
@@ -53,7 +54,7 @@
    [(:: (:? #\-) (:+ lex:digit)) (token-<integer> (string->number lexeme))] ;; integer regexp
    [whitespace (lex input-port)] ;; skip whitespace
    [lex:comment (lex input-port)] ;; skip comment
-   [(:: lex:letter (:* (:or lex:letter lex:digit))) (token-<identifier> (string->symbol lexeme))] ;; identifier regexp
+   [lex:identifier (token-<identifier> (string->symbol lexeme))] ;; identifier regexp
    [(eof) (token-EOF 'eof)]))
   
 (define parse
@@ -76,7 +77,7 @@
                           [(<if-exp>) $1]
                           [(<lambda-exp>) $1]
                           [(<call-exp>) $1]
-                          ;;; [(<let-exp>) $1]
+                          [(<let-exp>) $1]
                           [(<infix-operator>) $1]]
 
             ;; if
@@ -84,6 +85,10 @@
 
             ;; lambda
             [<lambda-exp> [(LAMBDA <identifier> ARROW <expression>) (lambda-exp $2 $4)]]
+            [<let-exp> [(LET <identifier> <identifiers> EQUALS <expression> IN <expression>) (let-exp $2 $3 $5 $7)]]
+
+            [<identifiers>  [() '()]
+                            [(<identifier> <identifiers>) (cons $1 $2)]]
 
             ;; application
             [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]]
@@ -106,5 +111,5 @@
 
             )))
 
-(let ([p (open-input-string "f 0 1")])
+(let ([p (open-input-string "let f x = x in f 5")])
   (parse (lambda () (lex p))))
