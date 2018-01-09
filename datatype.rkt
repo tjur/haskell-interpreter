@@ -12,6 +12,7 @@
   expression?
   (const-exp (const number?))
   (bool-exp (bool boolean?))
+  (undefined-exp)
   (var-exp (var symbol?))
   (if-exp
    (if-exp1 expression?)
@@ -20,6 +21,9 @@
   (lambda-exp
    (var symbol?)
    (body expression?))
+  (call-exp
+   (rator expression?)
+   (rand (list-of expression?)))
   (arith-exp
     (op symbol?)
     (exp1 expression?)

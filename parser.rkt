@@ -18,6 +18,7 @@
 (define-tokens non-terminals (
                               <integer>
                               <boolean>
+                              <undefined>
                               <identifier>
                               <arith-sym>
                               PLUSPLUS COLON
@@ -40,6 +41,7 @@
    ["->" (token-ARROW '->)]
    ["True" (token-<boolean> #t)]
    ["False" (token-<boolean> #f)]
+   ["undefined" (token-<undefined> 'undefined)]
    ["if" (token-IF 'if)]
    ["then" (token-THEN 'then)]
    ["else" (token-ELSE 'else)]
@@ -61,20 +63,38 @@
    (end EOF)
    (error (lambda (a b stx) 
             (error 'parse "failed at ~s" stx)))
+
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Grammar ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
    (grammar [<program> [(<expression>) (a-program $1)]]
             [<expression> [(<integer>) (const-exp $1)]
                           [(<boolean>) (bool-exp $1)]
+                          [(<undefined>) (undefined-exp)]
                           [(<identifier>) (var-exp $1)]
                           [(OPENSB <list-exp> CLOSESB) (list-exp $2)]
                           [(HEAD <expression>) (head-exp $2)]
                           [(TAIL <expression>) (tail-exp $2)]
                           [(<if-exp>) $1]
                           [(<lambda-exp>) $1]
+                          [(<call-exp>) $1]
                           ;;; [(<let-exp>) $1]
                           [(<infix-operator>) $1]]
+
+            ;; if
             [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
+
+            ;; lambda
             [<lambda-exp> [(LAMBDA <identifier> ARROW <expression>) (lambda-exp $2 $4)]]
 
+            ;; application
+            [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]]
+
+            [<one-or-more-expressions> [(<expression>) (list $1)]
+                                       [(<expressions>) $1]]
+
+            [<expressions> [() '()]
+                           [(<expression> <expressions>) (cons $1 $2)]]
+            
+            ;; lists
             [<list-exp> [() (empty-list-exp)]
                         [(<expression>) (cons-list-exp $1 (empty-list-exp))]
                         [(<expression> COMMA <list-exp>) (cons-list-exp $1 $3)]]
@@ -86,5 +106,5 @@
 
             )))
 
-(let ([p (open-input-string "[] + []")])
+(let ([p (open-input-string "f 0 1")])
   (parse (lambda () (lex p))))
