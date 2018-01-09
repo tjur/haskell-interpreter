@@ -27,9 +27,9 @@
    (rator expression?)
    (rand (list-of expression?)))
   (let-exp
-    (var symbol?)
-    (args (list-of symbol?))
-    (exp expression?)
+    (vars (list-of symbol?))
+    (args (list-of (list-of symbol?)))
+    (exps (list-of expression?))
     (body expression?))
   (arith-exp
     (op symbol?)
