@@ -3,6 +3,7 @@
 ### Racket ###
 *.rkt~
 *.rkt.bak
+*.bak
 \#*.rkt#
 \#*.rkt#*#
 *.dep
