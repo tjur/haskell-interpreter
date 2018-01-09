@@ -19,7 +19,7 @@
     (if-exp2 expression?)
     (if-exp3 expression?))
   (lambda-exp
-    (var symbol?)
+    (vars (list-of symbol?))
     (body expression?))
   (call-exp
    (rator expression?)

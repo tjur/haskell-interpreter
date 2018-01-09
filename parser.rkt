@@ -1,14 +1,15 @@
 #lang racket
 
-(require parser-tools/cfg-parser)
-(provide (all-from-out parser-tools/cfg-parser))
-
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
          parser-tools/yacc
+         parser-tools/cfg-parser
          syntax/readerr)
 
 (require "datatype.rkt")
+
+(provide scan&parse)
+
 
 (define-lex-abbrevs [lex:letter (:or (:/ #\a #\z) (:/ #\A #\Z))]
   [lex:digit (:/ #\0 #\9)]
@@ -23,7 +24,7 @@
                               <identifier>
                               <arith-sym>
                               PLUSPLUS COLON
-                              OPENSB CLOSESB COMMA
+                              OPENB CLOSEB OPENSB CLOSESB COMMA
                               EOF
                               IF THEN ELSE
                               LAMBDA ARROW
@@ -33,6 +34,8 @@
 (define lex
   (lexer
    ["++" (token-PLUSPLUS '++)]
+   ["(" (token-OPENB 'openb)]
+   [")" (token-CLOSEB 'closeb)]
    ["[" (token-OPENSB 'opensb)]
    ["]" (token-CLOSESB 'closesb)]
    ["," (token-COMMA 'comma)]
@@ -74,6 +77,7 @@
                           [(OPENSB <list-exp> CLOSESB) (list-exp $2)]
                           [(HEAD <expression>) (head-exp $2)]
                           [(TAIL <expression>) (tail-exp $2)]
+                          [(OPENB <expression> CLOSEB) $2]
                           [(<if-exp>) $1]
                           [(<lambda-exp>) $1]
                           [(<call-exp>) $1]
@@ -84,7 +88,9 @@
             [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
 
             ;; lambda
-            [<lambda-exp> [(LAMBDA <identifier> ARROW <expression>) (lambda-exp $2 $4)]]
+            [<lambda-exp> [(LAMBDA <identifier> <identifiers> ARROW <expression>) (lambda-exp (cons $2 $3) $5)]]
+
+            ;; let
             [<let-exp> [(LET <identifier> <identifiers> EQUALS <expression> IN <expression>) (let-exp $2 $3 $5 $7)]]
 
             [<identifiers>  [() '()]
@@ -108,8 +114,14 @@
                               [(<expression> COLON <expression>) (cons-exp $1 $3)]
                               [(<expression> PLUSPLUS <expression>) (append-exp $1 $3)]]
 
-
             )))
 
-(let ([p (open-input-string "let f x = x in f 5")])
-  (parse (lambda () (lex p))))
+
+(define scan&parse
+  (lambda (str)
+    (let ([p (open-input-string str)])
+      (parse (lambda () (lex p))))))
+
+(scan&parse "let f x = x in (f 5)")
+
+(scan&parse "\\x y -> (x + y)")
