@@ -25,7 +25,8 @@
                               <undefined>
                               <identifier>
                               <big-letter-name>
-                              <arith-sym>
+                              <arith-op>
+                              <bool-op>
                               PLUSPLUS COLON SEMICOLON
                               OPENB CLOSEB OPENSB CLOSESB COMMA
                               IF THEN ELSE
@@ -62,7 +63,8 @@
    ["head" (token-HEAD 'head)]
    ["tail" (token-TAIL 'tail)]
    ["data" (token-DATA 'data)]
-   [(:or "+" "-" "/" "*") (token-<arith-sym> (string->symbol lexeme))]
+   [(:or "+" "-" "/" "*") (token-<arith-op> (string->symbol lexeme))]
+   [(:or "&&" "||") (token-<bool-op> (string->symbol lexeme))]
    [(:: (:? #\-) (:+ lex:digit)) (token-<integer> (string->number lexeme))] ;; integer regexp
    [(:: lex:big-letter (:* (:or lex:letter lex:digit "_" "-"))) (token-<big-letter-name> (string->symbol lexeme))]
    [lex:identifier (token-<identifier> (string->symbol lexeme))] ;; identifier regexp
@@ -103,8 +105,8 @@
                   [(<data-exp>) $1]]
 
     ;; value
-    [<value-exp>  [(<integer>) (const-exp $1)]
-                  [(<boolean>) (bool-exp $1)]
+    [<value-exp>  [(<integer>) (const-num-exp $1)]
+                  [(<boolean>) (const-bool-exp $1)]
                   [(<undefined>) (undefined-exp)]
                   [(OPENSB <list-exp> CLOSESB) (list-exp $2)]]
 
@@ -137,7 +139,8 @@
                 [(<expression> COMMA <list-exp>) (cons $1 $3)]]
 
     ;; infix operators
-    [<infix-operator> [(<expression> <arith-sym> <expression>) (arith-exp $2 $1 $3)]
+    [<infix-operator> [(<expression> <arith-op> <expression>) (arith-exp $2 $1 $3)]
+                      [(<expression> <bool-op> <expression>) (bool-exp $2 $1 $3)]
                       [(<expression> COLON <expression>) (cons-exp $1 $3)]
                       [(<expression> PLUSPLUS <expression>) (append-exp $1 $3)]]
 
@@ -152,7 +155,7 @@
     [<types> [() '()]
              [(<big-letter-name> <types>) (cons $1 $2)]]
 
-    ;; global delarations
+    ;; global declarations
     [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]]
 
     [<argument> [(<value-exp>) $1]
@@ -204,3 +207,5 @@
 (scan&parse "rev acc [] = acc; rev acc xs = rev ((head xs):acc) xs")
 
 (scan&parse "f Leaf = 0; f (Node l x r) = (f l) + x + (f r)")
+
+(scan&parse "True && False || False")

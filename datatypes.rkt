@@ -10,8 +10,8 @@
 (define-datatype
   expression
   expression?
-  (const-exp (const number?))
-  (bool-exp (bool boolean?))
+  (const-num-exp (const number?))
+  (const-bool-exp (bool boolean?))
   (undefined-exp)
   (var-exp (var symbol?))
   (list-exp
@@ -32,6 +32,10 @@
     (exps (list-of expression?))
     (body expression?))
   (arith-exp
+    (op symbol?)
+    (exp1 expression?)
+    (exp2 expression?))
+  (bool-exp
     (op symbol?)
     (exp1 expression?)
     (exp2 expression?))
