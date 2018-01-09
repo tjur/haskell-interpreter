@@ -6,7 +6,7 @@
          parser-tools/cfg-parser
          syntax/readerr)
 
-(require "datatype.rkt")
+(require "datatypes.rkt")
 
 (provide scan&parse)
 
