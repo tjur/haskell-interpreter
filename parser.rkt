@@ -79,6 +79,8 @@
    (grammar
     [<program> [(<expression>) (a-program $1)]]
 
+    [<identifiers>  [() '()]
+                    [(<identifier> <identifiers>) (cons $1 $2)]]
     ;; expression
     [<expression> [(<integer>) (const-exp $1)]
                   [(<boolean>) (bool-exp $1)]
@@ -104,9 +106,6 @@
     ;; let
     [<let-exp> [(LET <identifier> <identifiers> EQUALS <expression> IN <expression>) (let-exp $2 $3 $5 $7)]]
 
-    [<identifiers>  [() '()]
-                    [(<identifier> <identifiers>) (cons $1 $2)]]
-
     ;; application
     [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]]
 
@@ -117,9 +116,9 @@
                    [(<expression> <expressions>) (cons $1 $2)]]
             
     ;; lists
-    [<list-exp> [() (empty-list-exp)]
-                [(<expression>) (cons-list-exp $1 (empty-list-exp))]
-                [(<expression> COMMA <list-exp>) (cons-list-exp $1 $3)]]
+    [<list-exp> [() '()]
+                [(<expression>) (list $1)]
+                [(<expression> COMMA <list-exp>) (cons $1 $3)]]
 
     ;; infix operators
     [<infix-operator> [(<expression> <arith-sym> <expression>) (arith-exp $2 $1 $3)]
@@ -150,3 +149,5 @@
 (scan&parse "\\x y -> (x + y)")
 
 (scan&parse "data Tree = Empty | Leaf Int | Node Tree Tree")
+
+(scan&parse "[] ++ [x, 5,   10]")

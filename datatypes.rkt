@@ -14,6 +14,8 @@
   (bool-exp (bool boolean?))
   (undefined-exp)
   (var-exp (var symbol?))
+  (list-exp
+    (list (list-of (lambda (_) #t))))
   (if-exp
     (if-exp1 expression?)
     (if-exp2 expression?)
@@ -33,8 +35,6 @@
     (op symbol?)
     (exp1 expression?)
     (exp2 expression?))
-  (list-exp
-    (list list-expression?))
   (head-exp
     (exp expression?))
   (tail-exp
@@ -48,14 +48,6 @@
   (data-exp
    (type-constr symbol?)
    (val-constrs (list-of val-constr-exp?))))
-
-(define-datatype
-  list-expression
-  list-expression?
-  (empty-list-exp)
-  (cons-list-exp
-    (head expression?)
-    (tail list-expression?)))
 
 (define-datatype
   val-constr-exp
