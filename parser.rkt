@@ -3,8 +3,7 @@
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
          parser-tools/yacc
-         parser-tools/cfg-parser
-         syntax/readerr)
+         parser-tools/cfg-parser)
 
 (require "datatypes.rkt")
 
@@ -20,55 +19,57 @@
   [lex:identifier (:: lex:letter (:* (:or lex:letter lex:digit "_" "-")))]
   [lex:symbol (:or "!" "#" "$" "%" "&" "*" "+" "." "/" "<" "=" ">" "?" "@" "\\" "^" "|" "-" "~" ":")])
 
-(define-tokens non-terminals (
-                              <integer>
-                              <boolean>
-                              <unit>
-                              <identifier>
-                              <big-letter-name>
-                              <operator>
-                              COLON SEMICOLON COMMA GRAVE
-                              OPENB CLOSEB OPENSB CLOSESB
-                              IF THEN ELSE
-                              LAMBDA ARROW
-                              LET IN EQUALS
-                              DATA BAR
-                              EOF))
+(define-empty-tokens empty-tokens (
+                                   <unit>
+                                   COLON SEMICOLON COMMA GRAVE
+                                   OPENB CLOSEB OPENSB CLOSESB
+                                   IF THEN ELSE
+                                   LAMBDA ARROW
+                                   LET IN EQUALS
+                                   DATA BAR
+                                   EOF))
+
+(define-tokens non-empty-tokens (
+                                 <integer>
+                                 <boolean>
+                                 <identifier>
+                                 <big-letter-name>
+                                 <operator>))
   
 (define lex
   (lexer
    [lex:whitespace (lex input-port)] ;; skip whitespace
    [lex:comment (lex input-port)] ;; skip comment
-   ["()" (token-<unit> 'unit)]
-   ["(" (token-OPENB 'openb)]
-   [")" (token-CLOSEB 'closeb)]
-   ["[" (token-OPENSB 'opensb)]
-   ["]" (token-CLOSESB 'closesb)]
-   ["," (token-COMMA 'comma)]
-   ["`" (token-GRAVE 'grave)]
-   [":" (token-COLON 'colon)]
-   [";" (token-SEMICOLON 'semicolon)]
-   ["=" (token-EQUALS '=)]
-   ["\\" (token-LAMBDA '\\)]
-   ["->" (token-ARROW '->)]
-   ["|" (token-BAR 'BAR)]
+   ["()" (token-<unit>)]
+   ["(" (token-OPENB)]
+   [")" (token-CLOSEB)]
+   ["[" (token-OPENSB)]
+   ["]" (token-CLOSESB)]
+   ["," (token-COMMA)]
+   ["`" (token-GRAVE)]
+   [":" (token-COLON)]
+   [";" (token-SEMICOLON)]
+   ["=" (token-EQUALS)]
+   ["\\" (token-LAMBDA)]
+   ["->" (token-ARROW)]
+   ["|" (token-BAR)]
+   ["if" (token-IF)]
+   ["then" (token-THEN)]
+   ["else" (token-ELSE)]
+   ["let" (token-LET)]
+   ["in" (token-IN)]
+   ["data" (token-DATA)]
    ["True" (token-<boolean> #t)]
    ["False" (token-<boolean> #f)]
-   ["if" (token-IF 'if)]
-   ["then" (token-THEN 'then)]
-   ["else" (token-ELSE 'else)]
-   ["let" (token-LET 'let)]
-   ["in" (token-IN 'in)]
-   ["data" (token-DATA 'data)]
    [(:: lex:symbol (:* lex:symbol)) (token-<operator> (string->symbol lexeme))] 
    [(:: (:? #\-) (:+ lex:digit)) (token-<integer> (string->number lexeme))] ;; integer regexp
    [(:: lex:big-letter (:* (:or lex:letter lex:digit "_" "-"))) (token-<big-letter-name> (string->symbol lexeme))]
    [lex:identifier (token-<identifier> (string->symbol lexeme))] ;; identifier regexp
-   [(eof) (token-EOF 'eof)]))
+   [(eof) (token-EOF)]))
   
 (define parse
   (cfg-parser
-   (tokens non-terminals)
+   (tokens empty-tokens non-empty-tokens)
    (start <program>)
    (end EOF)
    (error (lambda (a b stx) 
