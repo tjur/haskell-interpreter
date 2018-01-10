@@ -104,8 +104,8 @@
                   [(<data-exp>) $1]]
 
     ;; simple values
-    [<value-exp>  [(<integer>) (const-exp $1)]
-                  [(<boolean>) (bool-exp $1)]
+    [<value-exp>  [(<integer>) (const-num-exp $1)]
+                  [(<boolean>) (const-bool-exp $1)]
                   [(<undefined>) (undefined-exp)]
                   [(OPENSB <list-exp> CLOSESB) (list-exp $2)]]
 
