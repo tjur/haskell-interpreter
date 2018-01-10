@@ -23,7 +23,7 @@
 (define-tokens non-terminals (
                               <integer>
                               <boolean>
-                              <undefined>
+                              <unit>
                               <identifier>
                               <big-letter-name>
                               <operator>
@@ -38,7 +38,8 @@
 (define lex
   (lexer
    [lex:whitespace (lex input-port)] ;; skip whitespace
-   [lex:comment (lex input-port)] ;; skip comment 
+   [lex:comment (lex input-port)] ;; skip comment
+   ["()" (token-<unit> 'unit)]
    ["(" (token-OPENB 'openb)]
    [")" (token-CLOSEB 'closeb)]
    ["[" (token-OPENSB 'opensb)]
@@ -53,7 +54,6 @@
    ["|" (token-BAR 'BAR)]
    ["True" (token-<boolean> #t)]
    ["False" (token-<boolean> #f)]
-   ["undefined" (token-<undefined> 'undefined)]
    ["if" (token-IF 'if)]
    ["then" (token-THEN 'then)]
    ["else" (token-ELSE 'else)]
@@ -82,7 +82,8 @@
                     [(<identifier> <identifiers>) (cons $1 $2)]]
 
     [<global-expression>  [(<expression>) $1]
-                          [(<declaration-exp>) $1]]
+                          [(<declaration-exp>) $1]
+                          [(<data-exp>) $1]]
 
     [<global-expressions> [() '()]
                           [(SEMICOLON <global-expression> <global-expressions>) (cons $2 $3)]]
@@ -95,13 +96,12 @@
                   [(<lambda-exp>) $1]
                   [(<call-exp>) $1]
                   [(<let-exp>) $1]
-                  [(<infix-operator>) $1]
-                  [(<data-exp>) $1]]
+                  [(<infix-operator>) $1]]
 
     ;; simple values
     [<value-exp>  [(<integer>) (const-num-exp $1)]
                   [(<boolean>) (const-bool-exp $1)]
-                  [(<undefined>) (undefined-exp)]
+                  [(<unit>) (unit-exp)]
                   [(OPENSB <list-exp> CLOSESB) (list-exp $2)]]
 
     ;; single variable
@@ -123,7 +123,8 @@
 
     ;; application
     [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]
-                [(<expression> GRAVE <var-exp> GRAVE <expression>) (call-exp $3 (list $1 $5))]]
+                [(<expression> GRAVE <var-exp> GRAVE <expression>) (call-exp $3 (list $1 $5))]
+                [(OPENB <operator> CLOSEB <expressions>) (call-exp (var-exp $2) $4)]]
 
     [<one-or-more-expressions> [(<expression>) (list $1)]
                                [(<expressions>) $1]]
@@ -138,7 +139,7 @@
 
     ;; infix operators
     [<infix-operator> [(<expression> COLON <expression>) (cons-exp $1 $3)]
-                      [(<expression> <operator> <expression>) (op-exp $2 $1 $3)]]
+                      [(<expression> <operator> <expression>) (call-exp (var-exp $2) (list $1 $3))]]
 
     ;; algebraic data types (without polymorphism)
     [<data-exp> [(DATA <big-letter-name> EQUALS <val-constructor> <val-constructors>) (data-exp $2 (cons $4 $5))]]
@@ -194,15 +195,35 @@
                  g y s = s+y
                  y = 42 in (f 5)")
 
+(newline)
+
 (scan&parse "\\x y -> (x + y)")
 
-(scan&parse "data Tree = Empty | Leaf Int | Node Tree Tree")
+(newline)
+
+(scan&parse "data Tree = Empty | Leaf Int | Node Tree Tree;
+
+             data Bin = Zero | One")
+
+(newline)
 
 (scan&parse "f 0 = 1;
              f n = n * (factorial (n - 1))")
 
+(newline)
+
 (scan&parse "rev acc [] = acc; 
-             rev acc x:xs = rev (x:acc) xs")
+             rev acc x:y:xs = rev (x:acc) xs")
+
+(newline)
 
 (scan&parse "f Leaf = 0;
              f (Node l x r) = (f l) + x + (f r)")
+
+(newline)
+
+(scan&parse "(if (()) then True else False)")
+
+(newline)
+
+(scan&parse "add1 = (+) 1")

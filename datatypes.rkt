@@ -12,7 +12,7 @@
   expression?
   (const-num-exp (const number?))
   (const-bool-exp (bool boolean?))
-  (undefined-exp)
+  (unit-exp)
   (var-exp (var symbol?))
   (list-exp
     (list (list-of (lambda (_) #t))))
@@ -31,10 +31,6 @@
     (args (list-of (list-of symbol?)))
     (exps (list-of expression?))
     (body expression?))
-  (op-exp
-    (op symbol?)
-    (exp1 expression?)
-    (exp2 expression?))
   (cons-exp
     (head expression?)
     (tail expression?))
