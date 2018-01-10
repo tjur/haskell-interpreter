@@ -32,7 +32,6 @@
                               IF THEN ELSE
                               LAMBDA ARROW
                               LET IN EQUALS
-                              HEAD TAIL
                               DATA BAR
                               EOF))
   
@@ -60,8 +59,6 @@
    ["else" (token-ELSE 'else)]
    ["let" (token-LET 'let)]
    ["in" (token-IN 'in)]
-   ["head" (token-HEAD 'head)]
-   ["tail" (token-TAIL 'tail)]
    ["data" (token-DATA 'data)]
    [(:: lex:symbol (:* lex:symbol)) (token-<operator> (string->symbol lexeme))] 
    [(:: (:? #\-) (:+ lex:digit)) (token-<integer> (string->number lexeme))] ;; integer regexp
@@ -91,9 +88,7 @@
                           [(SEMICOLON <global-expression> <global-expressions>) (cons $2 $3)]]
 
     ;; expression
-    [<expression> [(HEAD <expression>) (head-exp $2)]
-                  [(TAIL <expression>) (tail-exp $2)]
-                  [(OPENB <expression> CLOSEB) $2]
+    [<expression> [(OPENB <expression> CLOSEB) $2]
                   [(<value-exp>) $1]
                   [(<var-exp>) $1]
                   [(<if-exp>) $1]

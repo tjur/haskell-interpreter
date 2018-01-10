@@ -38,10 +38,6 @@
   (cons-exp
     (head expression?)
     (tail expression?))
-  (head-exp
-    (exp expression?))
-  (tail-exp
-    (exp expression?))
   (data-exp
     (type-constr symbol?)
     (val-constrs (list-of val-constr-exp?)))
