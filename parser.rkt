@@ -17,7 +17,8 @@
   [lex:digit (:/ #\0 #\9)]
   [lex:whitespace (:or #\newline #\return #\tab #\space #\vtab)]
   [lex:comment (:: (:* lex:whitespace) "--" (:* (:~ #\newline)) #\newline)]
-  [lex:identifier (:: lex:letter (:* (:or lex:letter lex:digit "_" "-")))])
+  [lex:identifier (:: lex:letter (:* (:or lex:letter lex:digit "_" "-")))]
+  [lex:symbol (:or "!" "#" "$" "%" "&" "*" "+" "." "/" "<" "=" ">" "?" "@" "\\" "^" "|" "-" "~" ":")])
 
 (define-tokens non-terminals (
                               <integer>
@@ -25,9 +26,9 @@
                               <undefined>
                               <identifier>
                               <big-letter-name>
-                              <arith-sym>
-                              PLUSPLUS COLON SEMICOLON
-                              OPENB CLOSEB OPENSB CLOSESB COMMA
+                              <operator>
+                              COLON SEMICOLON COMMA GRAVE
+                              OPENB CLOSEB OPENSB CLOSESB
                               IF THEN ELSE
                               LAMBDA ARROW
                               LET IN EQUALS
@@ -39,13 +40,13 @@
   (lexer
    [lex:whitespace (lex input-port)] ;; skip whitespace
    [lex:comment (lex input-port)] ;; skip comment 
-   ["++" (token-PLUSPLUS '++)]
    ["(" (token-OPENB 'openb)]
    [")" (token-CLOSEB 'closeb)]
    ["[" (token-OPENSB 'opensb)]
    ["]" (token-CLOSESB 'closesb)]
    ["," (token-COMMA 'comma)]
-   [":" (token-COLON ':)]
+   ["`" (token-GRAVE 'grave)]
+   [":" (token-COLON 'colon)]
    [";" (token-SEMICOLON 'semicolon)]
    ["=" (token-EQUALS '=)]
    ["\\" (token-LAMBDA '\\)]
@@ -62,7 +63,7 @@
    ["head" (token-HEAD 'head)]
    ["tail" (token-TAIL 'tail)]
    ["data" (token-DATA 'data)]
-   [(:or "+" "-" "/" "*") (token-<arith-sym> (string->symbol lexeme))]
+   [(:: lex:symbol (:* lex:symbol)) (token-<operator> (string->symbol lexeme))] 
    [(:: (:? #\-) (:+ lex:digit)) (token-<integer> (string->number lexeme))] ;; integer regexp
    [(:: lex:big-letter (:* (:or lex:letter lex:digit "_" "-"))) (token-<big-letter-name> (string->symbol lexeme))]
    [lex:identifier (token-<identifier> (string->symbol lexeme))] ;; identifier regexp
@@ -90,11 +91,11 @@
                           [(SEMICOLON <global-expression> <global-expressions>) (cons $2 $3)]]
 
     ;; expression
-    [<expression> [(<identifier>) (var-exp $1)]
-                  [(HEAD <expression>) (head-exp $2)]
+    [<expression> [(HEAD <expression>) (head-exp $2)]
                   [(TAIL <expression>) (tail-exp $2)]
                   [(OPENB <expression> CLOSEB) $2]
                   [(<value-exp>) $1]
+                  [(<var-exp>) $1]
                   [(<if-exp>) $1]
                   [(<lambda-exp>) $1]
                   [(<call-exp>) $1]
@@ -102,11 +103,14 @@
                   [(<infix-operator>) $1]
                   [(<data-exp>) $1]]
 
-    ;; value
+    ;; simple values
     [<value-exp>  [(<integer>) (const-exp $1)]
                   [(<boolean>) (bool-exp $1)]
                   [(<undefined>) (undefined-exp)]
                   [(OPENSB <list-exp> CLOSESB) (list-exp $2)]]
+
+    ;; single variable
+    [<var-exp> [(<identifier>) (var-exp $1)]]
 
     ;; if
     [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
@@ -120,10 +124,11 @@
     [<let-def> [(<identifier> <identifiers> EQUALS <expression>) (list $1 $2 $4)]]
 
     [<let-defs> [() (list '() '() '())]
-               [(<let-def> <let-defs>) (cons3 $1 $2)]]
+                [(<let-def> <let-defs>) (cons3 $1 $2)]]
 
     ;; application
-    [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]]
+    [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]
+                [(<expression> GRAVE <var-exp> GRAVE <expression>) (call-exp $3 (list $1 $5))]]
 
     [<one-or-more-expressions> [(<expression>) (list $1)]
                                [(<expressions>) $1]]
@@ -137,9 +142,8 @@
                 [(<expression> COMMA <list-exp>) (cons $1 $3)]]
 
     ;; infix operators
-    [<infix-operator> [(<expression> <arith-sym> <expression>) (arith-exp $2 $1 $3)]
-                      [(<expression> COLON <expression>) (cons-exp $1 $3)]
-                      [(<expression> PLUSPLUS <expression>) (append-exp $1 $3)]]
+    [<infix-operator> [(<expression> COLON <expression>) (cons-exp $1 $3)]
+                      [(<expression> <operator> <expression>) (op-exp $2 $1 $3)]]
 
     ;; algebraic data types (without polymorphism)
     [<data-exp> [(DATA <big-letter-name> EQUALS <val-constructor> <val-constructors>) (data-exp $2 (cons $4 $5))]]
@@ -153,12 +157,14 @@
              [(<big-letter-name> <types>) (cons $1 $2)]]
 
     ;; global delarations
-    [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]]
+    [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]
+                       [(OPENB <operator> CLOSEB <argument> <argument> EQUALS <expression>) (op-declaration-exp $2 $4 $5 $7)]]
 
     [<argument> [(<value-exp>) $1]
-                [(<big-letter-name>) (unpack-exp $1 '())]
-                [(OPENB <big-letter-name> <arguments> CLOSEB) (unpack-exp $2 $3)]
-                [(<identifier>) (var-exp $1)]]
+                [(<argument> COLON <argument>) (unpack-exp ': (list $1 $3))]
+                [(<big-letter-name> <arguments>) (unpack-exp $1 $2)]
+                [(<var-exp>) $1]
+                [(OPENB <argument> CLOSEB) $2]]
 
     [<arguments>  [() '()]
                   [(<argument> <arguments>) (cons $1 $2)]]
@@ -197,10 +203,11 @@
 
 (scan&parse "data Tree = Empty | Leaf Int | Node Tree Tree")
 
-(scan&parse "[] ++ [x, 5, 10]")
+(scan&parse "f 0 = 1;
+             f n = n * (factorial (n - 1))")
 
-(scan&parse "f 0 = 1; f n = n * (factorial (n - 1))")
+(scan&parse "rev acc [] = acc; 
+             rev acc x:xs = rev (x:acc) xs")
 
-(scan&parse "rev acc [] = acc; rev acc xs = rev ((head xs):acc) xs")
-
-(scan&parse "f Leaf = 0; f (Node l x r) = (f l) + x + (f r)")
+(scan&parse "f Leaf = 0;
+             f (Node l x r) = (f l) + x + (f r)")

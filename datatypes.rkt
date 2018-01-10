@@ -31,20 +31,17 @@
     (args (list-of (list-of symbol?)))
     (exps (list-of expression?))
     (body expression?))
-  (arith-exp
+  (op-exp
     (op symbol?)
     (exp1 expression?)
     (exp2 expression?))
+  (cons-exp
+    (head expression?)
+    (tail expression?))
   (head-exp
     (exp expression?))
   (tail-exp
     (exp expression?))
-  (cons-exp
-    (exp1 expression?)
-    (exp2 expression?))
-  (append-exp
-    (exp1 expression?)
-    (exp2 expression?))
   (data-exp
     (type-constr symbol?)
     (val-constrs (list-of val-constr-exp?)))
@@ -54,6 +51,11 @@
   (declaration-exp
     (var symbol?)
     (arguments (list-of expression?))
+    (body expression?))
+  (op-declaration-exp
+    (op symbol?)
+    (arg1 expression?)
+    (arg2 expression?)
     (body expression?)))
 
 (define-datatype
