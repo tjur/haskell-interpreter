@@ -25,7 +25,7 @@
     (body expression?))
   (call-exp
     (rator expression?)
-    (rand (list-of expression?)))
+    (rands (list-of expression?)))
   (let-exp
     (vars (list-of symbol?))
     (args (list-of (list-of symbol?)))

@@ -6,6 +6,7 @@
          parser-tools/cfg-parser)
 
 (require "datatypes.rkt")
+(require "pretty-printer.rkt")
 
 (provide scan&parse)
 
@@ -192,39 +193,47 @@
     (let ([p (open-input-string str)])
       (parse (lambda () (lex p))))))
 
-(scan&parse "let f a b = let z = a + b in z
-                 g y s = s+y
-                 y = 42 in (f 5)")
+(define pretty-print-programs
+  (lambda (progs)
+    (for-each
+      (lambda (prog)
+        (display
+          (pretty-print-program
+            (scan&parse prog)))
+        (newline))
+      progs)))
 
-(newline)
 
-(scan&parse "\\x y -> (x + y)")
+(define programs-list
+  '(
+    "let f a b = let z = a + b in z
+         g y s = s+y
+         y = 42 in (f 5)"
 
-(newline)
+    "\\x y -> (x + y)"
 
-(scan&parse "data Tree = Empty | Leaf Int | Node Tree Tree;
+    "data Tree = Empty | Leaf Int | Node Tree Tree;
+     data Bin = Zero | One"
 
-             data Bin = Zero | One")
+    "fact 0 = 1;
+     fact n = n * (fact (n - 1))"
 
-(newline)
+    "rev acc [] = acc; 
+     rev acc x:xs = rev (x:acc) xs"
 
-(scan&parse "f 0 = 1;
-             f n = n * (factorial (n - 1))")
+    "f Leaf = 0;
+     f (Node l x r) = (f l) + x + (f r)"
 
-(newline)
+    "add1 = (+) 1"
 
-(scan&parse "rev acc [] = acc; 
-             rev acc x:y:xs = rev (x:acc) xs")
+    "if if True
+        then 1
+        else 0
+     then let f a b = let z = a + b in z
+         g y s = s+y
+         y = 42 in (f 5)
+     else ()"
+  ))
 
-(newline)
 
-(scan&parse "f Leaf = 0;
-             f (Node l x r) = (f l) + x + (f r)")
-
-(newline)
-
-(scan&parse "(if (()) then True else False)")
-
-(newline)
-
-(scan&parse "add1 = (+) 1")
+(pretty-print-programs programs-list)
