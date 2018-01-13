@@ -1,8 +1,5 @@
 #lang eopl
 
-(require (only-in racket/base
-                  foldl))
-
 (require (only-in racket/string
                   string-join))
 
@@ -20,11 +17,10 @@
   (lambda (prog)
     (cases program prog
       (a-program (exps)
-        (foldl
-          (lambda (exp s)
-            (string-append s (pretty-print-exp exp) "\n"))
-          ""
-          exps)))))
+        (string-join
+          (map pretty-print-exp exps)
+          "\n"
+          #:after-last "\n")))))
 
 (define pretty-print-exp
   (lambda (exp)
