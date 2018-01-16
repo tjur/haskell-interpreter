@@ -5,7 +5,7 @@
 
 (require "datatypes.rkt")
 
-(provide pretty-print-program pretty-print-exp)
+(provide pretty-print-program pretty-print-exp pretty-print-expval)
 
 (define indent
   (lambda (n)
@@ -90,15 +90,42 @@
           (declaration-exp (var arguments body)
             (string-append
               (symbol->string var) (string-join (map (pretty-exp indents) arguments) " " #:before-first " ") " =\n"
-              (indent indents_1) ((pretty-exp indents_1) body)))
-
-          (op-declaration-exp (op arg1 arg2 body)
-            (string-append
-              "(" (symbol->string op) ") " ((pretty-exp indents) arg1) " " ((pretty-exp indents) arg2) " =\n"
               (indent indents_1) ((pretty-exp indents_1) body))))))))
+
+          ;;; (op-declaration-exp (op arg1 arg2 body)
+          ;;;   (string-append
+          ;;;     "(" (symbol->string op) ") " ((pretty-exp indents) arg1) " " ((pretty-exp indents) arg2) " =\n"
+          ;;;     (indent indents_1) ((pretty-exp indents_1) body))))))))
 
 (define pretty-print-val-constr
   (lambda (val)
     (cases val-constr-exp val
       (val-constr (name types)
         (string-join (map symbol->string (cons name types)) " ")))))
+
+(define pretty-print-expval
+  (lambda (val)
+    (cases expval val
+      (num-val (n)
+        (number->string n))
+
+      (bool-val (bool)
+        (if bool
+          "True"
+          "False"))
+
+      (unit-val () "()")
+
+      (list-val (items)
+        (string-join
+          (map pretty-print-expval items)
+          ", "
+          #:before-first "["
+          #:after-last "]"))
+
+      ;; TODO: wypisywanie enva!
+      (proc-val (p)
+        (cases proc p
+          (procedure (bvars body env)
+            (string-append
+              "\\" (string-join (map symbol->string bvars) " ") " -> " ((pretty-exp 1) body))))))))

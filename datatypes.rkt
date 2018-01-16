@@ -43,12 +43,12 @@
   (declaration-exp
    (var symbol?)
    (arguments (list-of expression?))
-   (body expression?))
-  (op-declaration-exp
-   (op symbol?)
-   (arg1 expression?)
-   (arg2 expression?)
    (body expression?)))
+  ;;; (op-declaration-exp
+  ;;;  (op symbol?)
+  ;;;  (arg1 expression?)
+  ;;;  (arg2 expression?)
+  ;;;  (body expression?)))
 
 (define-datatype
   val-constr-exp
@@ -182,12 +182,12 @@
    (saved-env environment?)
    (saved-cont continuation?))
   (rator-cont            
-   (rand expression?)
+   (rand (list-of expression?))
    (saved-env environment?)
    (saved-cont continuation?))
-  (rand-cont             
-   (proc-val expval?)
-   (saved-cont continuation?))
+  ;;; (rand-cont             
+  ;;;  (proc-val expval?)
+  ;;;  (saved-cont continuation?))
   (thunk-cont
    (ref reference?)
    (saved-cont continuation?)))

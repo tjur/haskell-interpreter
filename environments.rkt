@@ -5,7 +5,8 @@
 (require (only-in racket/base
                   reverse))
 
-(provide init-env empty-env extend-env apply-env make-extend-env-rec)
+(provide init-env empty-env extend-env apply-env extend-env* make-extend-env-rec)
+
 
 ;;;;;;;;;;;;;;;; initial environment ;;;;;;;;;;;;;;;;
   
@@ -15,6 +16,14 @@
     (empty-env)))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
+
+
+(define extend-env* 
+  (lambda (bvars bvals saved-env)
+    (if (null? bvars)
+      saved-env
+      (extend-env (car bvars) (car bvals)
+        (extend-env* (cdr bvars) (cdr bvals) saved-env)))))
 
 (define apply-env
   (lambda (env search-sym)

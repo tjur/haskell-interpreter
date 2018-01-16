@@ -156,7 +156,7 @@
 
     ;; global delarations
     [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]
-                       [(OPENB <operator> CLOSEB <argument> <argument> EQUALS <expression>) (op-declaration-exp $2 $4 $5 $7)]]
+                       [(OPENB <operator> CLOSEB <argument> <argument> EQUALS <expression>) (declaration-exp $2 (list $4 $5) $7)]]
 
     [<argument> [(<value-exp>) $1]
                 [(<argument> COLON <argument>) (unpack-exp ': (list $1 $3))]
