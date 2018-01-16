@@ -4,6 +4,7 @@
 (require "datatypes.rkt")
 (require "environments.rkt")
 (require "store.rkt")
+(require "pretty-printer.rkt")
 
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
@@ -11,7 +12,7 @@
 ;; value-of-program : Program -> FinalAnswer
 (define value-of-program 
   (lambda (pgm)
-    (initialize-store!) 
+    (initialize-store!)
     (cases program pgm
       (a-program (exp1)
                  (value-of/k (car exp1) (init-env) (end-cont))))))
@@ -54,9 +55,9 @@
               (value-of/k exp1 env
                           (if-cont exp2 exp3 env cont)))
       
-      (call-exp (rator rand) 
+      (call-exp (rator rands) 
                 (value-of/k rator env
-                            (rator-cont rand env cont)))
+                            (rator-cont rands env cont)))
 
       (else (eopl:error "Not implemented"))
       
@@ -79,10 +80,9 @@
                               saved-env (cons2-cont val saved-cont)))
       
       (cons2-cont (val1 saved-cont)
-                  (let ((head (expval->val val1))
-                        (tail (expval->list val)))
+                  (let ((tail (expval->list val)))
                     (apply-cont saved-cont
-                                (list-val (cons head tail)))))
+                                (list-val (cons val1 tail)))))
 
       (tail-cont (tail-exps saved-env saved-cont)
                  (value-of-list/k tail-exps saved-env
@@ -91,29 +91,35 @@
       (head-cont (head-val saved-cont)
                  (apply-cont saved-cont (list-val (cons head-val (expval->list val)))))
       
-      (rator-cont (rand saved-env saved-cont)
-                  (value-of/k rand saved-env
-                              (rand-cont val saved-cont)))
-      
-      (rand-cont (val1 saved-cont)
-                 (let ((proc (expval->proc val1)))
-                   (apply-procedure/k proc val saved-cont)))
+      (rator-cont (rands saved-env saved-cont)
+                  (let ((proc (expval->proc val)))
+                    (apply-procedure/k
+                      proc
+                      (map
+                        (lambda (arg-exp)
+                          (newref (a-thunk arg-exp saved-env)))
+                        rands)
+                      saved-cont)))
+
+      ;;; (rand-cont (val1 saved-cont)
+      ;;;            (let ((proc (expval->proc val1)))
+      ;;;              (apply-procedure/k proc val saved-cont)))
 
       (thunk-cont (ref1 saved-cont)
                   (begin
                     (setref! ref1 val)   
                     (apply-cont saved-cont val)))
-                  
+
       )))
 
 
-;; apply-procedure/k : Proc * ExpVal * Cont -> FinalAnswer
+;; apply-procedure/k : Proc * ExpVals * Cont -> FinalAnswer
 (define apply-procedure/k
-  (lambda (proc1 arg cont)
+  (lambda (proc1 args cont)
     (cases proc proc1
-      (procedure (var body saved-env)
+      (procedure (vars body saved-env)
                  (value-of/k body
-                             (extend-env var arg saved-env)
+                             (extend-env* vars args saved-env)
                              cont)))))
 
 
@@ -137,7 +143,10 @@
 
 (define run
   (lambda (string)
-    (value-of-program (scan&parse string))))
+    (display 
+      (pretty-print-expval
+        (value-of-program (scan&parse string))))
+    (newline)))
 
 (run "27")
 
@@ -151,4 +160,6 @@
 
 (run "if False then 1 else 0")
 
-(run "1:(2:[])")
+(run "0:(1:(2:[]))")
+
+(run "let f x = if x then 1 else 0 in f")

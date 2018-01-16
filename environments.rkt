@@ -3,7 +3,7 @@
 (require "datatypes.rkt")
 (require "store.rkt")
 
-(provide init-env empty-env extend-env apply-env)
+(provide init-env empty-env extend-env extend-env* apply-env)
 
 ;;;;;;;;;;;;;;;; initial environment ;;;;;;;;;;;;;;;;
   
@@ -13,6 +13,14 @@
     (empty-env)))
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
+
+
+(define extend-env* 
+  (lambda (bvars bvals saved-env)
+    (if (null? bvars)
+      saved-env
+      (extend-env (car bvars) (car bvals)
+        (extend-env* (cdr bvars) (cdr bvals) saved-env)))))
 
 (define apply-env
   (lambda (env search-sym)
