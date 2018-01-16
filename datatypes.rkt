@@ -94,14 +94,24 @@
 (define expval->list
   (lambda (v)
     (cases expval v
-      (list-val (list) list)
+      (list-val (lst) lst)
       (else (expval-extractor-error 'list v)))))
 
 (define expval->unit
   (lambda (v)
     (cases expval v
-      (unit-val () an-unit)
+      (unit-val () (an-unit))
       (else (expval-extractor-error 'unit v)))))
+
+;; extracts any value
+(define expval->val
+  (lambda (v)
+    (cases expval v
+      (num-val (num) num)
+      (bool-val (bool) bool)
+      (proc-val (proc) proc)
+      (list-val (lst) lst)
+      (unit-val () (an-unit)))))
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -113,7 +123,7 @@
 
 (define-datatype proc proc?
   (procedure
-   (bvar (list-of symbol?))
+   (bvars (list-of symbol?))
    (body expression?)
    (env environment?)))
 
@@ -146,3 +156,38 @@
   (a-thunk
    (exp1 expression?)
    (env environment?)))
+
+
+;;;;;;;;;;;;;;;; continuations ;;;;;;;;;;;;;;;;
+
+(define-datatype continuation continuation?
+  (end-cont)                 
+  (if-cont 
+   (exp2 expression?)
+   (exp3 expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (cons1-cont                
+   (tail expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (cons2-cont                
+   (head-val expval?)
+   (saved-cont continuation?))
+  (head-cont
+   (head-val expval?)
+   (saved-cont continuation?))
+  (tail-cont
+   (tail-exps (list-of expression?))
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (rator-cont            
+   (rand expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (rand-cont             
+   (proc-val expval?)
+   (saved-cont continuation?))
+  (thunk-cont
+   (ref reference?)
+   (saved-cont continuation?)))
