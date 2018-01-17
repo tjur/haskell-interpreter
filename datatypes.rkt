@@ -43,7 +43,11 @@
   (declaration-exp
    (var symbol?)
    (arguments (list-of expression?))
-   (body expression?)))
+   (body expression?))
+  (arith-op-exp
+   (op symbol?)
+   (exp1 expression?)
+   (exp2 expression?)))
   ;;; (op-declaration-exp
   ;;;  (op symbol?)
   ;;;  (arg1 expression?)
@@ -190,4 +194,13 @@
   ;;;  (saved-cont continuation?))
   (thunk-cont
    (ref reference?)
+   (saved-cont continuation?))
+  (arith-op-cont1
+   (op symbol?)
+   (exp2 expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (arith-op-cont2
+   (op symbol?)
+   (val1 expval?)
    (saved-cont continuation?)))

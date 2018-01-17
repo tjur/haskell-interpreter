@@ -90,7 +90,11 @@
           (declaration-exp (var arguments body)
             (string-append
               (symbol->string var) (string-join (map (pretty-exp indents) arguments) " " #:before-first " ") " =\n"
-              (indent indents_1) ((pretty-exp indents_1) body))))))))
+              (indent indents_1) ((pretty-exp indents_1) body)))
+
+          (arith-op-exp (op exp1 exp2)
+            ((pretty-exp indents)
+              (call-exp (var-exp op) (list exp1 exp2)))))))))
 
           ;;; (op-declaration-exp (op arg1 arg2 body)
           ;;;   (string-append

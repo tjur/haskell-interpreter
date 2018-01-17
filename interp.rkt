@@ -5,6 +5,7 @@
 (require "environments.rkt")
 (require "store.rkt")
 (require "pretty-printer.rkt")
+(require "basic-procedures.rkt")
 
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
@@ -29,11 +30,14 @@
       (unit-exp () (apply-cont cont (unit-val)))
       
       (var-exp (var)
-               (let [[ref1 (apply-env env var)]]
-                        (let ((w (deref ref1)))
-                          (if (expval? w)
-                              (apply-cont cont w)
-                              (value-of-thunk/k w (thunk-cont ref1 cont))))))
+               (cond
+                ((apply-env env var)
+                  => (lambda (ref1)
+                      (let ((w (deref ref1)))
+                        (if (expval? w)
+                            (apply-cont cont w)
+                            (value-of-thunk/k w (thunk-cont ref1 cont))))))
+                (else (apply-cont cont (get-basic-procedure var)))))
 
       (list-exp (exps)
                 (value-of-list/k exps env cont))
@@ -58,6 +62,10 @@
       (call-exp (rator rands) 
                 (value-of/k rator env
                             (rator-cont rands env cont)))
+
+      (arith-op-exp (op exp1 exp2)
+                    (value-of/k exp1 env
+                                (arith-op-cont1 op exp2 env cont)))
 
       (else (eopl:error "Not implemented"))
       
@@ -101,14 +109,20 @@
                         rands)
                       saved-cont)))
 
-      ;;; (rand-cont (val1 saved-cont)
-      ;;;            (let ((proc (expval->proc val1)))
-      ;;;              (apply-procedure/k proc val saved-cont)))
-
       (thunk-cont (ref1 saved-cont)
                   (begin
                     (setref! ref1 val)   
                     (apply-cont saved-cont val)))
+
+      (arith-op-cont1 (op exp2 saved-env saved-cont)
+                      (value-of/k exp2 saved-env
+                                  (arith-op-cont2 op val saved-cont)))
+
+      (arith-op-cont2 (op val1 saved-cont)
+                      (let ((num1 (expval->num val1))
+                            (num2 (expval->num val)))
+                        (apply-cont saved-cont
+                                    (eval-arith-op op num1 num2))))
 
       )))
 
@@ -140,7 +154,6 @@
 
 
 
-
 (define run
   (lambda (string)
     (display 
@@ -163,3 +176,5 @@
 (run "0:(1:(2:[]))")
 
 (run "let f x = if x then 1 else 0 in f")
+
+(run "(+) 3 7")

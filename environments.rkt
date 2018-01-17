@@ -25,8 +25,7 @@
 (define apply-env
   (lambda (env search-sym)
     (cases environment env
-      (empty-env ()
-                 (eopl:error 'apply-env "No binding for ~s" search-sym))
+      (empty-env () #f)
       (extend-env (bvar bval saved-env)
                   (if (eqv? search-sym bvar)
                       bval
