@@ -125,8 +125,8 @@
                 [(<let-def> <let-defs>) (cons3 $1 $2)]]
 
     ;; application
-    [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]
-                [(<expression> GRAVE <var-exp> GRAVE <expression>) (call-exp $3 (list $1 $5))]]
+    [<call-exp> [(<expression> <expression>) (call-exp $1 $2)]
+                [(<expression> GRAVE <var-exp> GRAVE <expression>) (call-exp (call-exp $3 $1) $5)]]
 
     [<one-or-more-expressions> [(<expression>) (list $1)]
                                [(<expressions>) $1]]
@@ -141,7 +141,7 @@
 
     ;; infix operators
     [<infix-op-exp> [(<expression> COLON <expression>) (cons-exp $1 $3)]
-                    [(<expression> <operator> <expression>) (call-exp (var-exp $2) (list $1 $3))]]
+                    [(<expression> <operator> <expression>) (call-exp (call-exp (var-exp $2) $1) $3)]]
 
     ;; algebraic data types (without polymorphism)
     [<data-exp> [(DATA <big-letter-name> EQUALS <val-constructor> <val-constructors>) (data-exp $2 (cons $4 $5))]]
@@ -178,13 +178,25 @@
      (cons (list-ref xs 1) (list-ref xss 1))
      (cons (list-ref xs 2) (list-ref xss 2)))))
 
+(define (to-one-arg-proc b-vars p-body)
+  (define to-one-arg-proc-aux
+         (lambda (rev-b-vars curr-p-body)
+           (if (null? rev-b-vars)
+               curr-p-body
+               (to-one-arg-proc-aux (cdr rev-b-vars) (lambda-exp (car rev-b-vars) curr-p-body)))))
+  
+  (to-one-arg-proc-aux (reverse b-vars) p-body))
+
 (define make-let-exp
   (lambda (let-defs let-body)
+    (let* [(p-names (list-ref let-defs 0))
+          (b-vars (list-ref let-defs 1))
+          (p-bodies (list-ref let-defs 2))
+          (new-p-bodies (map to-one-arg-proc b-vars p-bodies))]
     (let-exp
-     (list-ref let-defs 0)
-     (list-ref let-defs 1)
-     (list-ref let-defs 2)
-     let-body)))
+     p-names
+     new-p-bodies
+     let-body))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

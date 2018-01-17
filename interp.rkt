@@ -54,16 +54,16 @@
                 (apply-cont cont 
                             (proc-val (procedure vars body env))))
       
-      (let-exp (p-names b-vars p-bodies let-body)
+      (let-exp (p-names p-bodies let-body)
                   (value-of/k let-body
-                              (make-extend-env-rec p-names b-vars p-bodies env)
+                              (make-extend-env-rec p-names p-bodies env)
                               cont))
       
       (if-exp (exp1 exp2 exp3)
               (value-of/k exp1 env
                           (if-cont exp2 exp3 env cont)))
       
-      (call-exp (rator rands) 
+      (call-exp (rator rands)
                 (value-of/k rator env
                             (rator-cont rands env cont)))
 
@@ -107,14 +107,11 @@
       (head-cont (head-val saved-cont)
                  (apply-cont saved-cont (list-val (list head-val (newref val)))))
       
-      (rator-cont (rands saved-env saved-cont)
+      (rator-cont (rand saved-env saved-cont)
                   (let ((proc (expval->proc val)))
                     (apply-procedure/k
                       proc
-                      (map
-                        (lambda (arg-exp)
-                          (newref (a-thunk arg-exp saved-env)))
-                        rands)
+                      (newref (a-thunk rand saved-env))
                       saved-cont)))
 
       (thunk-cont (ref1 saved-cont)
@@ -145,11 +142,11 @@
 
 ;; apply-procedure/k : Proc * ExpVals * Cont -> FinalAnswer
 (define apply-procedure/k
-  (lambda (proc1 args cont)
+  (lambda (proc1 arg cont)
     (cases proc proc1
-      (procedure (vars body saved-env)
+      (procedure (var body saved-env)
                  (value-of/k body
-                             (extend-env* vars args saved-env)
+                             (extend-env var arg saved-env)
                              cont)))))
 
 (define value-of-list/k
@@ -203,3 +200,13 @@
 (run "let ones = 1:ones in (head (tail ones))")
 (run "empty (tail (tail [1, 2]))")
 (run "empty (tail (tail (1:(2:[]))))")
+
+(run "let a = 1:b b = 2:a in (head a + (head (tail a)))")
+
+(run "1 + 2 + 3 + 4 + 5 - 5")
+
+(run "0 == 1")
+
+(run "5 - 2 * 2") ;; łączność w lewo, brak priorytetu :-(
+
+(run "let add x y = x + y in (add 2)")

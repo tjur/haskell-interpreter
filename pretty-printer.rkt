@@ -64,16 +64,16 @@
             (string-append
               "\\" (string-join (map symbol->string vars) " ") " -> " ((pretty-exp indents) body)))
 
-          (call-exp (rator rands)
+          (call-exp (rator rand)
             (string-append
-              "(" ((pretty-exp indents) rator) (string-join (map (pretty-exp indents) rands) " " #:before-first " ") ")"))
+              "(" ((pretty-exp indents) rator) ((pretty-exp indents) rand) ")"))
 
-          (let-exp (vars args exps body)
+          (let-exp (vars exps body)
             (let ((one-let (lambda (var args exp)
                             (string-append
                               (string-join (map symbol->string (cons var args)) " ") " = " ((pretty-exp indents_2) exp)))))
               (string-append
-                "let " (string-join (map one-let vars args exps) (string-append "\n" (indent indents_1))) "\n"
+                "let " (string-join (map one-let vars exps) (string-append "\n" (indent indents_1))) "\n"
                 (indent indents) "in " ((pretty-exp indents_1) body))))
 
           (cons-exp (head tail)
@@ -133,6 +133,6 @@
       ;; TODO: wypisywanie enva!
       (proc-val (p)
         (cases proc p
-          (procedure (bvars body env)
+          (procedure (bvar body env)
             (string-append
-              "\\" (string-join (map symbol->string bvars) " ") " -> " ((pretty-exp 1) body))))))))
+              "\\" (symbol->string bvar) " -> " ((pretty-exp 1) body))))))))

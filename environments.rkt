@@ -63,7 +63,7 @@
       (else #f))))
 
 ;; for variables (empty (car b-vars)) creates newref to thunk
-(define (make-extend-env-rec p-names b-vars p-bodies env)
+(define (make-extend-env-rec p-names p-bodies env)
   
   (define create-newrefs-for-vars-and-extend-env-rec
     (lambda (p-names b-vars p-bodies p-names-acc b-vars-acc p-bodies-acc var-refs)
@@ -92,7 +92,7 @@
                          (update-var-refs-with-new-env (cdr var-refs) new-env))))))))
 
   (let* [(result (create-newrefs-for-vars-and-extend-env-rec
-                  p-names b-vars p-bodies '() '() '() '()))
+                  p-names (map (lambda (_) '()) p-names) p-bodies '() '() '() '())) ;; ten map to tymczasowe rozwiązanie, trzeba wyrzucić całkowice bvars
          (new-env (list-ref result 0))
          (var-refs (list-ref result 1))]
     (update-var-refs-with-new-env var-refs new-env)))

@@ -21,14 +21,13 @@
    (if-exp2 expression?)
    (if-exp3 expression?))
   (lambda-exp
-   (vars (list-of symbol?))
+   (var symbol?)
    (body expression?))
   (call-exp
    (rator expression?)
-   (rands (list-of expression?)))
+   (rand expression?))
   (let-exp
    (vars (list-of symbol?))
-   (args (list-of (list-of symbol?)))
    (exps (list-of expression?))
    (body expression?))
   (cons-exp
@@ -125,7 +124,7 @@
 
 (define-datatype proc proc?
   (procedure
-   (bvars (list-of symbol?))
+   (bvar symbol?)
    (body expression?)
    (env environment?)))
 
@@ -146,7 +145,7 @@
    (saved-env environment?))
   (extend-env-rec*
    (proc-names (list-of symbol?))
-   (b-vars (list-of (list-of symbol?)))
+   (b-vars (list-of (lambda (x) (and ((list-of symbol?) x) (<= (length x) 1)))))
    (proc-bodies (list-of (lambda (x) (or (expression? x) (reference? x)))))
    (saved-env environment?)))
 
@@ -184,7 +183,7 @@
    (saved-env environment?)
    (saved-cont continuation?))
   (rator-cont            
-   (rand (list-of expression?))
+   (rand expression?)
    (saved-env environment?)
    (saved-cont continuation?))
   (thunk-cont

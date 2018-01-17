@@ -16,9 +16,9 @@
     (newref
       (proc-val
         (procedure
-          '(x)
+          'x
           (lambda-exp
-            '(y)
+            'y
             (number-op-exp op (var-exp 'x) (var-exp 'y)))
           (empty-env))))))
 
@@ -41,7 +41,7 @@
 (define create-list-procedure
   (lambda (proc)
     (newref (proc-val
-              (procedure '(xs)
+              (procedure 'xs
                 (list-proc-exp proc (var-exp 'xs))
               (empty-env))))))
 
