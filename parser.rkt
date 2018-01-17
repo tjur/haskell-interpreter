@@ -107,7 +107,8 @@
                   [(OPENSB <list-exp> CLOSESB) (list-exp $2)]]
 
     ;; single variable
-    [<var-exp> [(<identifier>) (var-exp $1)]]
+    [<var-exp> [(<identifier>) (var-exp $1)]
+               [(OPENB <operator> CLOSEB) (var-exp $2)]]
 
     ;; if
     [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
@@ -125,8 +126,7 @@
 
     ;; application
     [<call-exp> [(<expression> <one-or-more-expressions>) (call-exp $1 $2)]
-                [(<expression> GRAVE <var-exp> GRAVE <expression>) (call-exp $3 (list $1 $5))]
-                [(OPENB <operator> CLOSEB <expressions>) (call-exp (var-exp $2) $4)]]
+                [(<expression> GRAVE <var-exp> GRAVE <expression>) (call-exp $3 (list $1 $5))]]
 
     [<one-or-more-expressions> [(<expression>) (list $1)]
                                [(<expressions>) $1]]
@@ -141,7 +141,7 @@
 
     ;; infix operators
     [<infix-op-exp> [(<expression> COLON <expression>) (cons-exp $1 $3)]
-                      [(<expression> <operator> <expression>) (call-exp (var-exp $2) (list $1 $3))]]
+                    [(<expression> <operator> <expression>) (call-exp (var-exp $2) (list $1 $3))]]
 
     ;; algebraic data types (without polymorphism)
     [<data-exp> [(DATA <big-letter-name> EQUALS <val-constructor> <val-constructors>) (data-exp $2 (cons $4 $5))]]

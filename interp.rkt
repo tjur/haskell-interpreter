@@ -173,12 +173,8 @@
 
 (run "if False then 1 else 0")
 
-(run "1:(2:[])")
-
 (run "let x = 42 in x")
 
 (run "0:(1:(2:[]))")
 
-(run "let f x = if x then 1 else 0 in f")
-
-(run "(+) 3 7")
+(run "let add1 = (+) 1 in add1 10")
