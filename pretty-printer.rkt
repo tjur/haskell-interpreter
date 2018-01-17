@@ -4,6 +4,7 @@
                   string-join))
 
 (require "datatypes.rkt")
+(require "store.rkt") ;; wyświetlanie elementów listy
 
 (provide pretty-print-program pretty-print-exp pretty-print-expval)
 
@@ -92,14 +93,14 @@
               (symbol->string var) (string-join (map (pretty-exp indents) arguments) " " #:before-first " ") " =\n"
               (indent indents_1) ((pretty-exp indents_1) body)))
 
-          (arith-op-exp (op exp1 exp2)
+          (number-op-exp (op exp1 exp2)
             ((pretty-exp indents)
-              (call-exp (var-exp op) (list exp1 exp2)))))))))
+              (call-exp (var-exp op) (list exp1 exp2))))
+              
+          (list-proc-exp (proc exp1)
+            ((pretty-exp indents)
+              (call-exp (var-exp proc) (list exp1)))))))))
 
-          ;;; (op-declaration-exp (op arg1 arg2 body)
-          ;;;   (string-append
-          ;;;     "(" (symbol->string op) ") " ((pretty-exp indents) arg1) " " ((pretty-exp indents) arg2) " =\n"
-          ;;;     (indent indents_1) ((pretty-exp indents_1) body))))))))
 
 (define pretty-print-val-constr
   (lambda (val)
@@ -120,12 +121,14 @@
 
       (unit-val () "()")
 
-      (list-val (items)
-        (string-join
-          (map pretty-print-expval items)
-          ", "
-          #:before-first "["
-          #:after-last "]"))
+      ;;; (list-val (items)
+      ;;;   (string-join
+      ;;;     (map pretty-print-expval items)
+      ;;;     ", "
+      ;;;     #:before-first "["
+      ;;;     #:after-last "]"))
+
+      (list-val (_) "[...]")
 
       ;; TODO: wypisywanie enva!
       (proc-val (p)

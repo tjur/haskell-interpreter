@@ -15,7 +15,7 @@
   (unit-exp)
   (var-exp (var symbol?))
   (list-exp
-   (list (list-of (lambda (_) #t))))
+   (list list?))
   (if-exp
    (if-exp1 expression?)
    (if-exp2 expression?)
@@ -44,15 +44,13 @@
    (var symbol?)
    (arguments (list-of expression?))
    (body expression?))
-  (arith-op-exp
+  (number-op-exp
    (op symbol?)
    (exp1 expression?)
-   (exp2 expression?)))
-  ;;; (op-declaration-exp
-  ;;;  (op symbol?)
-  ;;;  (arg1 expression?)
-  ;;;  (arg2 expression?)
-  ;;;  (body expression?)))
+   (exp2 expression?))
+  (list-proc-exp
+   (proc symbol?)
+   (exp1 expression?)))
 
 (define-datatype
   val-constr-exp
@@ -71,7 +69,7 @@
    (boolean boolean?))
   (unit-val)
   (list-val
-   (list list?))
+   (list (list-of reference?)))
   (proc-val 
    (proc proc?)))
 
@@ -179,7 +177,7 @@
    (head-val expval?)
    (saved-cont continuation?))
   (head-cont
-   (head-val expval?)
+   (head-val reference?)
    (saved-cont continuation?))
   (tail-cont
    (tail-exps (list-of expression?))
@@ -189,18 +187,18 @@
    (rand (list-of expression?))
    (saved-env environment?)
    (saved-cont continuation?))
-  ;;; (rand-cont             
-  ;;;  (proc-val expval?)
-  ;;;  (saved-cont continuation?))
   (thunk-cont
    (ref reference?)
    (saved-cont continuation?))
-  (arith-op-cont1
+  (number-op-cont1
    (op symbol?)
    (exp2 expression?)
    (saved-env environment?)
    (saved-cont continuation?))
-  (arith-op-cont2
+  (number-op-cont2
    (op symbol?)
    (val1 expval?)
+   (saved-cont continuation?))
+  (list-proc-cont
+   (op symbol?)
    (saved-cont continuation?)))

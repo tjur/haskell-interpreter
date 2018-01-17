@@ -44,8 +44,11 @@
                 (value-of-list/k exps env cont))
 
       (cons-exp (exp1 exp2)
-                (value-of/k exp1 env
-                            (cons1-cont exp2 env cont)))
+                (apply-cont cont
+                  (list-val
+                    (list
+                      (newref (a-thunk exp1 env))
+                      (newref (a-thunk exp2 env))))))
       
       (lambda-exp (vars body)
                 (apply-cont cont 
@@ -64,9 +67,13 @@
                 (value-of/k rator env
                             (rator-cont rands env cont)))
 
-      (arith-op-exp (op exp1 exp2)
-                    (value-of/k exp1 env
-                                (arith-op-cont1 op exp2 env cont)))
+      (number-op-exp (op exp1 exp2)
+                      (value-of/k exp1 env
+                                  (number-op-cont1 op exp2 env cont)))
+
+      (list-proc-exp (proc exp1)
+                      (value-of/k exp1 env
+                                  (list-proc-cont proc cont)))
 
       (else (eopl:error "Not implemented"))
       
@@ -98,7 +105,7 @@
                              (head-cont val saved-cont)))
 
       (head-cont (head-val saved-cont)
-                 (apply-cont saved-cont (list-val (cons head-val (expval->list val)))))
+                 (apply-cont saved-cont (list-val (list head-val (newref val)))))
       
       (rator-cont (rands saved-env saved-cont)
                   (let ((proc (expval->proc val)))
@@ -115,15 +122,23 @@
                     (setref! ref1 val)   
                     (apply-cont saved-cont val)))
 
-      (arith-op-cont1 (op exp2 saved-env saved-cont)
+      (number-op-cont1 (op exp2 saved-env saved-cont)
                       (value-of/k exp2 saved-env
-                                  (arith-op-cont2 op val saved-cont)))
+                                  (number-op-cont2 op val saved-cont)))
 
-      (arith-op-cont2 (op val1 saved-cont)
-                      (let ((num1 (expval->num val1))
-                            (num2 (expval->num val)))
-                        (apply-cont saved-cont
-                                    (eval-arith-op op num1 num2))))
+      (number-op-cont2 (op val1 saved-cont)
+                        (let ((num1 (expval->num val1))
+                              (num2 (expval->num val)))
+                          (apply-cont saved-cont
+                                      (eval-number-procedure op num1 num2))))
+
+      (list-proc-cont (op saved-cont)
+                        (let* ((xs (expval->list val))
+                               (ref1 (eval-list-procedure op xs))
+                               (val1 (deref ref1)))
+                          (if (expval? val1)
+                            (apply-cont saved-cont val1)
+                            (value-of-thunk/k val1 (thunk-cont ref1 saved-cont)))))
 
       )))
 
@@ -137,13 +152,14 @@
                              (extend-env* vars args saved-env)
                              cont)))))
 
-
 (define value-of-list/k
   (lambda (exps env cont)
     (if (null? exps)
         (apply-cont cont (list-val '()))
-        (value-of/k (car exps) env
-                    (tail-cont (cdr exps) env cont)))))
+        (apply-cont
+          (tail-cont (cdr exps) env cont)
+          (newref
+            (a-thunk (car exps) env))))))
 
 
 ;; value-of-thunk : Thunk * Cont -> FinalAnswer
@@ -162,24 +178,28 @@
         (value-of-program (scan&parse string))))
     (newline)))
 
-(run "27")
+;;; (run "27")
 
-(run "True")
+;;; (run "True")
 
-(run "()")
+;;; (run "()")
 
-(run "[1, 2, 3, 4, 5]")
+;;; (run "[1, 2, 3, 4, 5]")
 
-(run "if True then 1 else 0")
+;;; (run "if True then 1 else 0")
 
-(run "if False then 1 else 0")
+;;; (run "if False then 1 else 0")
 
-(run "let x = 42 in x")
+;;; (run "let x = 42 in x")
 
-(run "0:(1:(2:[]))")
+;;; (run "0:(1:(2:[]))")
 
-(run "let add1 = (+) 1 in add1 10")
+;;; (run "let xs = 1:(2:[]) in (head xs)")
 
-(run "let f x = 42 in f ((/) 3 0)")
+;;; (run "let add1 = (+) 1 in add1 10")
 
-(run "let x = if (==) 1 1 then 1 else 0 in x")
+;;; (run "let f a = if a then a else a in f ((==) 1 2)")
+
+(run "let ones = 1:ones in (head (tail ones))")
+(run "empty (tail (tail [1, 2]))")
+(run "empty (tail (tail (1:(2:[]))))")
