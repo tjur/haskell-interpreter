@@ -14,6 +14,7 @@
 (define value-of-program 
   (lambda (pgm)
     (initialize-store!)
+    (init-basic-procedures)
     (cases program pgm
       (a-program (exp1)
                  (value-of/k (car exp1) (init-env) (end-cont))))))
@@ -178,3 +179,7 @@
 (run "0:(1:(2:[]))")
 
 (run "let add1 = (+) 1 in add1 10")
+
+(run "let f x = 42 in f ((/) 3 0)")
+
+(run "let x = if (==) 1 1 then 1 else 0 in x")
