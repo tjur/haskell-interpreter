@@ -52,7 +52,7 @@
       
       (let-exp (p-names b-vars p-bodies let-body)
                   (value-of/k let-body
-                              (extend-env-rec* p-names b-vars p-bodies env)
+                              (make-extend-env-rec p-names b-vars p-bodies env)
                               cont))
       
       (if-exp (exp1 exp2 exp3)
@@ -172,6 +172,10 @@
 (run "if True then 1 else 0")
 
 (run "if False then 1 else 0")
+
+(run "1:(2:[])")
+
+(run "let x = 42 in x")
 
 (run "0:(1:(2:[]))")
 

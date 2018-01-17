@@ -149,7 +149,7 @@
   (extend-env-rec*
    (proc-names (list-of symbol?))
    (b-vars (list-of (list-of symbol?)))
-   (proc-bodies (list-of expression?))
+   (proc-bodies (list-of (lambda (x) (or (expression? x) (reference? x)))))
    (saved-env environment?)))
 
 
