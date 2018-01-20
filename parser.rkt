@@ -114,7 +114,7 @@
     [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
 
     ;; lambda
-    [<lambda-exp> [(LAMBDA <identifier> <identifiers> ARROW <expression>) (lambda-exp (cons $2 $3) $5)]]
+    [<lambda-exp> [(LAMBDA <identifier> <identifiers> ARROW <expression>) (to-one-arg-proc (cons $2 $3) $5)]]
 
     ;; let
     [<let-exp> [(LET <let-def> <let-defs> IN <expression>) (make-let-exp (cons3 $2 $3) $5)]]
@@ -156,7 +156,7 @@
 
     ;; global delarations
     [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]
-                       [(OPENB <operator> CLOSEB <argument> <argument> EQUALS <expression>) (declaration-exp $2 (list $4 $5) $7)]]
+                       [(OPENB <operator> CLOSEB <arguments> EQUALS <expression>) (declaration-exp $2 $4 $6)]]
 
     [<argument> [(<value-exp>) $1]
                 [(<argument> COLON <argument>) (unpack-exp ': (list $1 $3))]

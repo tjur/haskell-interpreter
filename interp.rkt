@@ -207,6 +207,10 @@
 
 (run "0 == 1")
 
-(run "5 - 2 * 2") ;; łączność w lewo, brak priorytetu :-(
+(run "5 - 2 * 2") ;; łączność w lewo, brak priorytetu :-(  :'(    <- ja też płaczę
 
 (run "let add x y = x + y in (add 2)")
+
+(run "let o f g = \\x -> (f (g x))
+      in
+        (head `o` tail `o` tail [1, 2, 3])")
