@@ -60,15 +60,15 @@
               (indent indents) "then " ((pretty-exp indents_1) exp2) "\n"
               (indent indents) "else " ((pretty-exp indents_1) exp3)))
           
-          (lambda-exp (vars body)
+          (lambda-exp (var type body)
             (string-append
-              "\\" (string-join (map symbol->string vars) " ") " -> " ((pretty-exp indents) body)))
+              "\\" (symbol->string var) " -> " ((pretty-exp indents) body)))
 
           (call-exp (rator rand)
             (string-append
               "(" ((pretty-exp indents) rator) ((pretty-exp indents) rand) ")"))
 
-          (let-exp (vars exps body)
+          (let-exp (body-type vars exps body)
             (let ((one-let (lambda (var args exp)
                             (string-append
                               (string-join (map symbol->string (cons var args)) " ") " = " ((pretty-exp indents_2) exp)))))

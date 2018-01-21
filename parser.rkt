@@ -22,7 +22,8 @@
 
 (define-empty-tokens empty-tokens (
                                    <unit>
-                                   COLON SEMICOLON COMMA GRAVE
+                                   <int-type> <bool-type> <unit-type> <list-type>
+                                   COLON DOUBLECOLON SEMICOLON COMMA GRAVE
                                    OPENB CLOSEB OPENSB CLOSESB
                                    IF THEN ELSE
                                    LAMBDA ARROW
@@ -48,12 +49,17 @@
    ["]" (token-CLOSESB)]
    ["," (token-COMMA)]
    ["`" (token-GRAVE)]
+   ["::" (token-DOUBLECOLON)]
    [":" (token-COLON)]
    [";" (token-SEMICOLON)]
    ["=" (token-EQUALS)]
    ["\\" (token-LAMBDA)]
    ["->" (token-ARROW)]
    ["|" (token-BAR)]
+   ["int" (token-<int-type>)]
+   ["bool" (token-<bool-type>)]
+   ["unit" (token-<unit-type>)]
+   ["list" (token-<list-type>)]
    ["if" (token-IF)]
    ["then" (token-THEN)]
    ["else" (token-ELSE)]
@@ -80,8 +86,21 @@
    (grammar
     [<program> [(<global-expression> <global-expressions>) (a-program (cons $1 $2))]]
 
-    [<identifiers>  [() '()]
-                    [(<identifier> <identifiers>) (cons $1 $2)]]
+    [<identifiers-with-types>  [() '()]
+                    [(<identifier-with-type> <identifiers-with-types>) (cons $1 $2)]]
+
+    [<identifier-with-type> [(OPENB <identifier> DOUBLECOLON <type> CLOSEB) (list $2 $4)]]
+
+    ;; types
+    [<type> [(<int-type>) (int-type)]
+            [(<bool-type>) (bool-type)]
+            [(<unit-type>) (unit-type)]
+            [(<list-type> <type>) (list-type $2)]
+            [(<type> ARROW <type>) (proc-type $1 $3)]
+            [(<big-letter-name> <types>) (data-type $1 $2)]]
+
+    [<types> [() '()]
+             [(<type> <types>) (cons $1 $2)]]
 
     [<global-expression>  [(<expression>) $1]
                           [(<declaration-exp>) $1]
@@ -114,12 +133,12 @@
     [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
 
     ;; lambda
-    [<lambda-exp> [(LAMBDA <identifier> <identifiers> ARROW <expression>) (to-one-arg-proc (cons $2 $3) $5)]]
+    [<lambda-exp> [(LAMBDA <identifier-with-type> <identifiers-with-types> ARROW <expression>) (to-one-arg-proc (cons $2 $3) $5)]]
 
     ;; let
-    [<let-exp> [(LET <let-def> <let-defs> IN <expression>) (make-let-exp (cons3 $2 $3) $5)]]
+    [<let-exp> [(LET <type> <let-def> <let-defs> IN <expression>) (make-let-exp $2 (cons3 $3 $4) $6)]]
 
-    [<let-def> [(<identifier> <identifiers> EQUALS <expression>) (list $1 $2 $4)]]
+    [<let-def> [(<identifier> <identifiers-with-types> EQUALS <expression>) (list $1 $2 $4)]]
 
     [<let-defs> [() (list '() '() '())]
                 [(<let-def> <let-defs>) (cons3 $1 $2)]]
@@ -151,9 +170,6 @@
     [<val-constructors> [() '()]
                         [(BAR <val-constructor> <val-constructors>) (cons $2 $3)]]
 
-    [<types> [() '()]
-             [(<big-letter-name> <types>) (cons $1 $2)]]
-
     ;; global delarations
     [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]
                        [(OPENB <operator> CLOSEB <arguments> EQUALS <expression>) (declaration-exp $2 $4 $6)]]
@@ -178,22 +194,28 @@
      (cons (list-ref xs 1) (list-ref xss 1))
      (cons (list-ref xs 2) (list-ref xss 2)))))
 
-(define (to-one-arg-proc b-vars p-body)
+(define (to-one-arg-proc b-vars-with-types p-body)
   (define to-one-arg-proc-aux
-         (lambda (rev-b-vars curr-p-body)
-           (if (null? rev-b-vars)
+         (lambda (rev-b-vars-with-types curr-p-body)
+           (if (null? rev-b-vars-with-types)
                curr-p-body
-               (to-one-arg-proc-aux (cdr rev-b-vars) (lambda-exp (car rev-b-vars) curr-p-body)))))
+               (to-one-arg-proc-aux
+                (cdr rev-b-vars-with-types)
+                (let* ([res (car rev-b-vars-with-types)]
+                       [b-var (list-ref res 0)]
+                       [b-var-type (list-ref res 1)])
+                  (lambda-exp b-var b-var-type curr-p-body))))))
   
-  (to-one-arg-proc-aux (reverse b-vars) p-body))
+  (to-one-arg-proc-aux (reverse b-vars-with-types) p-body))
 
 (define make-let-exp
-  (lambda (let-defs let-body)
+  (lambda (body-type let-defs let-body)
     (let* [(p-names (list-ref let-defs 0))
-          (b-vars (list-ref let-defs 1))
+          (b-vars-with-types (list-ref let-defs 1))
           (p-bodies (list-ref let-defs 2))
-          (new-p-bodies (map to-one-arg-proc b-vars p-bodies))]
+          (new-p-bodies (map to-one-arg-proc b-vars-with-types p-bodies))]
     (let-exp
+     body-type
      p-names
      new-p-bodies
      let-body))))

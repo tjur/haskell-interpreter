@@ -19,6 +19,7 @@
           'x
           (lambda-exp
             'y
+            (int-type)
             (number-op-exp op (var-exp 'x) (var-exp 'y)))
           (empty-env))))))
 

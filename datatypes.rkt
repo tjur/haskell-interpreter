@@ -22,11 +22,13 @@
    (if-exp3 expression?))
   (lambda-exp
    (var symbol?)
+   (type type?)
    (body expression?))
   (call-exp
    (rator expression?)
    (rand expression?))
   (let-exp
+   (body-type type?)
    (vars (list-of symbol?))
    (exps (list-of expression?))
    (body expression?))
@@ -58,6 +60,21 @@
    (name symbol?)
    (types (list-of symbol?))))
 
+
+;;;;;;;;;;;;;;;; types ;;;;;;;;;;;;;;;;
+
+(define-datatype type type?
+  (int-type)
+  (bool-type)
+  (unit-type)
+  (list-type
+   (elems-type type?))
+  (proc-type
+   (var-type type?)
+   (body-type type?))
+  (data-type
+   (val-constr-name symbol?)
+   (types (list-of type?))))
 
 ;;;;;;;;;;;;;;;; expressed values ;;;;;;;;;;;;;;;;
 

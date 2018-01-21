@@ -50,11 +50,11 @@
                       (newref (a-thunk exp1 env))
                       (newref (a-thunk exp2 env))))))
       
-      (lambda-exp (vars body)
+      (lambda-exp (vars types body)
                 (apply-cont cont 
                             (proc-val (procedure vars body env))))
       
-      (let-exp (p-names p-bodies let-body)
+      (let-exp (body-type p-names p-bodies let-body)
                   (value-of/k let-body
                               (make-extend-env-rec p-names p-bodies env)
                               cont))
@@ -197,6 +197,7 @@
 
 ;;; (run "let f a = if a then a else a in f ((==) 1 2)")
 
+#|
 (run "let ones = 1:ones in (head (tail ones))")
 (run "empty (tail (tail [1, 2]))")
 (run "empty (tail (tail (1:(2:[]))))")
@@ -214,3 +215,13 @@
 (run "let o f g = \\x -> (f (g x))
       in
         (head `o` tail `o` tail [1, 2, 3])")
+|#
+
+(run "\\ (x :: int) -> (x + 1) 5")
+
+(run "let int f (x :: int) (y :: int) = x + y in (f 1 9)")
+
+(run "let int f (x :: int) (y :: int) = x - y in (f 43 1)")
+
+(run "let int -> int f (x :: int) (y :: int) = x + y in f")
+
