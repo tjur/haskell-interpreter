@@ -6,7 +6,7 @@
 (require "datatypes.rkt")
 (require "store.rkt")
 
-(provide init-basic-procedures get-basic-procedure eval-number-procedure eval-list-procedure)
+(provide (all-defined-out))
 
 (define number-ops-list
   '(+ - * / ==))
@@ -39,6 +39,15 @@
       ['/ (num-val (/ val1 val2))]
       ['== (bool-val (= val1 val2))])))
 
+(define result-type-number-procedure
+  (lambda (op)
+    (match op
+      ['+ (int-type)]
+      ['- (int-type)]
+      ['* (int-type)]
+      ['/ (int-type)]
+      ['== (bool-type)])))
+
 (define create-list-procedure
   (lambda (proc)
     (newref (proc-val
@@ -59,6 +68,13 @@
       ['head (car val)]
       ['tail (cadr val)]  ;; niby listy trzymamy jako pary, ale tak naprawdę to są to listy (dwu/zero)elementowe
       ['empty (newref (bool-val (null? val)))]))) ;; TODO: ten newref jest trochę przykry, ale interp czeka na referencję
+
+(define result-type-list-procedure
+  (lambda (op)
+    (match op
+      ['head (int-type)]
+      ['tail (list-type)]
+      ['empty (bool-type)])))
 
 (define basic-procedures-list
   (lambda ()

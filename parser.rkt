@@ -95,7 +95,7 @@
     [<type> [(<int-type>) (int-type)]
             [(<bool-type>) (bool-type)]
             [(<unit-type>) (unit-type)]
-            [(<list-type> <type>) (list-type $2)]
+            [(<list-type>) (list-type)]
             [(<type> ARROW <type>) (proc-type $1 $3)]
             [(<big-letter-name> <types>) (data-type $1 $2)]]
 
@@ -136,9 +136,9 @@
     [<lambda-exp> [(LAMBDA <identifier-with-type> <identifiers-with-types> ARROW <expression>) (to-one-arg-proc (cons $2 $3) $5)]]
 
     ;; let
-    [<let-exp> [(LET <type> <let-def> <let-defs> IN <expression>) (make-let-exp $2 (cons3 $3 $4) $6)]]
+    [<let-exp> [(LET <let-def> <let-defs> IN <expression>) (make-let-exp (cons3 $2 $3) $5)]]
 
-    [<let-def> [(<identifier> <identifiers-with-types> EQUALS <expression>) (list $1 $2 $4)]]
+    [<let-def> [(<identifier-with-type> <identifiers-with-types> EQUALS <expression>) (list $1 $2 $4)]]
 
     [<let-defs> [() (list '() '() '())]
                 [(<let-def> <let-defs>) (cons3 $1 $2)]]
@@ -170,7 +170,7 @@
     [<val-constructors> [() '()]
                         [(BAR <val-constructor> <val-constructors>) (cons $2 $3)]]
 
-    ;; global delarations
+    ;; global declarations
     [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]
                        [(OPENB <operator> CLOSEB <arguments> EQUALS <expression>) (declaration-exp $2 $4 $6)]]
 
@@ -209,14 +209,16 @@
   (to-one-arg-proc-aux (reverse b-vars-with-types) p-body))
 
 (define make-let-exp
-  (lambda (body-type let-defs let-body)
-    (let* [(p-names (list-ref let-defs 0))
+  (lambda (let-defs let-body)
+    (let* [(p-names-with-result-types (list-ref let-defs 0))
+           (p-names (map (lambda (x) (list-ref x 0)) p-names-with-result-types))
+           (p-result-types (map (lambda (x) (list-ref x 1)) p-names-with-result-types))
           (b-vars-with-types (list-ref let-defs 1))
           (p-bodies (list-ref let-defs 2))
           (new-p-bodies (map to-one-arg-proc b-vars-with-types p-bodies))]
     (let-exp
-     body-type
      p-names
+     p-result-types
      new-p-bodies
      let-body))))
 

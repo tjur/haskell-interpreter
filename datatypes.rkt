@@ -28,8 +28,8 @@
    (rator expression?)
    (rand expression?))
   (let-exp
-   (body-type type?)
-   (vars (list-of symbol?))
+   (p-names (list-of symbol?))
+   (p-result-types (list-of type?))
    (exps (list-of expression?))
    (body expression?))
   (cons-exp
@@ -67,14 +67,14 @@
   (int-type)
   (bool-type)
   (unit-type)
-  (list-type
-   (elems-type type?))
+  (list-type) ;; lists are heterogeneous
   (proc-type
    (var-type type?)
    (body-type type?))
   (data-type
    (val-constr-name symbol?)
-   (types (list-of type?))))
+   (types (list-of type?)))
+  (any-type))
 
 ;;;;;;;;;;;;;;;; expressed values ;;;;;;;;;;;;;;;;
 

@@ -68,12 +68,12 @@
             (string-append
               "(" ((pretty-exp indents) rator) ((pretty-exp indents) rand) ")"))
 
-          (let-exp (body-type vars exps body)
+          (let-exp (p-names p-result-types exps body)
             (let ((one-let (lambda (var args exp)
                             (string-append
                               (string-join (map symbol->string (cons var args)) " ") " = " ((pretty-exp indents_2) exp)))))
               (string-append
-                "let " (string-join (map one-let vars exps) (string-append "\n" (indent indents_1))) "\n"
+                "let " (string-join (map one-let p-names exps) (string-append "\n" (indent indents_1))) "\n"
                 (indent indents) "in " ((pretty-exp indents_1) body))))
 
           (cons-exp (head tail)

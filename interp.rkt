@@ -6,6 +6,7 @@
 (require "store.rkt")
 (require "pretty-printer.rkt")
 (require "basic-procedures.rkt")
+(require "type-checker.rkt")
 
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
@@ -54,7 +55,7 @@
                 (apply-cont cont 
                             (proc-val (procedure vars body env))))
       
-      (let-exp (body-type p-names p-bodies let-body)
+      (let-exp (p-names p-result-types p-bodies let-body)
                   (value-of/k let-body
                               (make-extend-env-rec p-names p-bodies env)
                               cont))
@@ -75,7 +76,7 @@
                       (value-of/k exp1 env
                                   (list-proc-cont proc cont)))
 
-      (else (eopl:error "Not implemented"))
+      (else (eopl:error "Not implemented for ~s" exp))
       
       )))
 
@@ -175,6 +176,11 @@
         (value-of-program (scan&parse string))))
     (newline)))
 
+(define type-of-program
+    (lambda (pgm)
+      (cases program pgm
+        (a-program (exp1) (type-of-exp (car exp1))))))
+
 ;;; (run "27")
 
 ;;; (run "True")
@@ -219,9 +225,11 @@
 
 (run "\\ (x :: int) -> (x + 1) 5")
 
-(run "let int f (x :: int) (y :: int) = x + y in (f 1 9)")
+(run "let (f :: int) (x :: int) (y :: int) = x + y in (f 1 9)")
 
-(run "let int f (x :: int) (y :: int) = x - y in (f 43 1)")
+(run "let (f :: bool) (x :: unit) = 100 (g :: int) (x :: int) (y :: int) = x - y in (g 43 1)")
 
-(run "let int -> int f (x :: int) (y :: int) = x + y in f")
-
+(type-of-program (scan&parse "42"))
+(type-of-program (scan&parse "True"))
+(type-of-program (scan&parse "if True then 2 else False"))
+;; (type-of-program (scan&parse "\\(x :: int) -> (x + 1)"))
