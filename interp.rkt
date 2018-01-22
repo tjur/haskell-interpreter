@@ -181,6 +181,13 @@
       (cases program pgm
         (a-program (exp1) (type-of-exp (car exp1))))))
 
+(define run-type
+  (lambda (string)
+    (display
+      (type-to-external-form
+        (type-of-program (scan&parse string))))
+    (newline)))
+
 ;;; (run "27")
 
 ;;; (run "True")
@@ -229,7 +236,8 @@
 
 (run "let (f :: bool) (x :: unit) = 100 (g :: int) (x :: int) (y :: int) = x - y in (g 43 1)")
 
-(type-of-program (scan&parse "42"))
-(type-of-program (scan&parse "True"))
-(type-of-program (scan&parse "if True then 2 else False"))
-;; (type-of-program (scan&parse "\\(x :: int) -> (x + 1)"))
+(run-type "42")
+(run-type "True")
+(run-type "\\(x :: int) -> (x + 1)")
+;;; (run-type "if True then 2 else False")
+(run-type "\\ (xs :: list) (ys :: list) -> ((head xs) + (head ys))")

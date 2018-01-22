@@ -39,14 +39,13 @@
       ['/ (num-val (/ val1 val2))]
       ['== (bool-val (= val1 val2))])))
 
-(define result-type-number-procedure
-  (lambda (op)
-    (match op
-      ['+ (int-type)]
-      ['- (int-type)]
-      ['* (int-type)]
-      ['/ (int-type)]
-      ['== (bool-type)])))
+(define number-procedure-types
+  (list
+    (cons '+ (proc-type (int-type) (proc-type (int-type) (int-type))))
+    (cons '- (proc-type (int-type) (proc-type (int-type) (int-type))))
+    (cons '* (proc-type (int-type) (proc-type (int-type) (int-type))))
+    (cons '/ (proc-type (int-type) (proc-type (int-type) (int-type))))
+    (cons '== (proc-type (int-type) (proc-type (int-type) (bool-type))))))
 
 (define create-list-procedure
   (lambda (proc)
@@ -69,18 +68,22 @@
       ['tail (cadr val)]  ;; niby listy trzymamy jako pary, ale tak naprawdę to są to listy (dwu/zero)elementowe
       ['empty (newref (bool-val (null? val)))]))) ;; TODO: ten newref jest trochę przykry, ale interp czeka na referencję
 
-(define result-type-list-procedure
-  (lambda (op)
-    (match op
-      ['head (int-type)]
-      ['tail (list-type)]
-      ['empty (bool-type)])))
+(define list-procedure-types
+  (list
+    (cons 'head (proc-type (list-type) (any-type)))
+    (cons 'tail (proc-type (list-type) (list-type)))
+    (cons 'empty (proc-type (list-type) (list-type)))))
 
 (define basic-procedures-list
   (lambda ()
     (append
       (number-procedures)
       (list-procedures))))
+
+(define basic-procedures-types
+  (append
+    number-procedure-types
+    list-procedure-types))
 
 (define basic-procedures-env "uninitialized!")
 

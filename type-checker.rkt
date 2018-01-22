@@ -2,8 +2,9 @@
 
 (require "datatypes.rkt")
 (require "basic-procedures.rkt")
+(require "pretty-printer.rkt")
 
-(provide type-of-exp)
+(provide type-of-exp type-to-external-form)
 
 
 ;; check-equal-type! : Type * Type * Exp -> Unspecified
@@ -24,7 +25,7 @@
                 "Types didn't match: ~s != ~a in~%~a"
                 (type-to-external-form ty1)
                 (type-to-external-form ty2)
-                exp)))
+                (pretty-print-exp exp))))
 
 ;; type-to-external-form : Type -> List
 (define type-to-external-form
@@ -32,6 +33,9 @@
     (cases type ty
       (int-type () 'int)
       (bool-type () 'bool)
+      (unit-type () '())
+      (list-type () 'list)
+      (any-type () 'any)
       (proc-type (arg-type result-type)
                  (list
                   (type-to-external-form arg-type)
@@ -88,17 +92,17 @@
                     (else
                      (report-rator-not-a-proc-type rator-type rator)))))
 
-      (number-op-exp (op exp1 exp2)
+      #|(number-op-exp (op exp1 exp2)
                      (let ((ty1 (type-of exp1 tenv))
                            (ty2 (type-of exp2 tenv)))
                        (check-equal-type! ty1 (int-type) exp1)
                        (check-equal-type! ty2 (int-type) exp2)
-                       (result-type-number-procedure op)))
+                       (result-type-number-procedure op)))|#
 
-      (list-proc-exp (proc exp1)
+      #|(list-proc-exp (proc exp1)
                      (let ((ty1 (type-of exp1 tenv)))
                        (check-equal-type! ty1 (list-type) exp1)
-                       (result-type-list-procedure proc)))
+                       (result-type-list-procedure proc)))|#
 
       (cons-exp (head tail)
                 (let ((ty1 (type-of tail tenv)))
@@ -146,7 +150,12 @@
     
 (define empty-tenv empty-tenv-record)
 (define extend-tenv extended-tenv-record)
-    
+(define extend-tenv*
+  (lambda (lst tenv)
+    (if (null? lst) tenv
+      (extend-tenv* (cdr lst)
+        (extend-tenv (caar lst) (cdar lst) tenv)))))
+
 (define apply-tenv 
   (lambda (tenv sym)
     (cases type-environment tenv
@@ -159,7 +168,8 @@
   
 (define init-tenv
   (lambda ()
-    (extend-tenv 'x (int-type) 
-                 (extend-tenv 'v (int-type)
-                              (extend-tenv 'i (int-type)
-                                           (empty-tenv))))))
+    (extend-tenv* basic-procedures-types
+      (extend-tenv 'x (int-type) 
+                  (extend-tenv 'v (int-type)
+                                (extend-tenv 'i (int-type)
+                                            (empty-tenv)))))))
