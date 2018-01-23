@@ -8,7 +8,7 @@
 (require "datatypes.rkt")
 (require "pretty-printer.rkt")
 
-(provide scan&parse)
+(provide scan&parse cons3 create-let-exp)
 
 
 (define-lex-abbrevs
@@ -22,7 +22,7 @@
 
 (define-empty-tokens empty-tokens (
                                    <unit>
-                                   <int-type> <bool-type> <unit-type> <list-type>
+                                   <int-type> <bool-type> <unit-type> <list-type> <any-type>
                                    COLON DOUBLECOLON SEMICOLON COMMA GRAVE
                                    OPENB CLOSEB OPENSB CLOSESB
                                    IF THEN ELSE
@@ -60,6 +60,7 @@
    ["bool" (token-<bool-type>)]
    ["unit" (token-<unit-type>)]
    ["list" (token-<list-type>)]
+   ["any" (token-<any-type>)]
    ["if" (token-IF)]
    ["then" (token-THEN)]
    ["else" (token-ELSE)]
@@ -96,6 +97,7 @@
             [(<bool-type>) (bool-type)]
             [(<unit-type>) (unit-type)]
             [(<list-type>) (list-type)]
+            [(<any-type>) (any-type)]
             [(<type> ARROW <type>) (proc-type $1 $3)]
             [(<big-letter-name> <types>) (data-type $1 $2)]]
 
@@ -136,7 +138,7 @@
     [<lambda-exp> [(LAMBDA <identifier-with-type> <identifiers-with-types> ARROW <expression>) (to-one-arg-proc (cons $2 $3) $5)]]
 
     ;; let
-    [<let-exp> [(LET <let-def> <let-defs> IN <expression>) (make-let-exp (cons3 $2 $3) $5)]]
+    [<let-exp> [(LET <let-def> <let-defs> IN <expression>) (create-let-exp (cons3 $2 $3) $5)]]
 
     [<let-def> [(<identifier-with-type> <identifiers-with-types> EQUALS <expression>) (list $1 $2 $4)]]
 
@@ -208,7 +210,7 @@
   
   (to-one-arg-proc-aux (reverse b-vars-with-types) p-body))
 
-(define make-let-exp
+(define create-let-exp
   (lambda (let-defs let-body)
     (let* [(p-names-with-result-types (list-ref let-defs 0))
            (p-names (map (lambda (x) (list-ref x 0)) p-names-with-result-types))

@@ -12,3 +12,5 @@
 compiled
 
 # End of https://www.gitignore.io/api/racket
+
+.vscode

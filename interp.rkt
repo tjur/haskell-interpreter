@@ -7,19 +7,27 @@
 (require "pretty-printer.rkt")
 (require "basic-procedures.rkt")
 (require "type-checker.rkt")
+(require "declarations-translator.rkt")
 
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
 
 ;; value-of-program : Program -> FinalAnswer
-(define value-of-program 
+(define values-of-program 
   (lambda (pgm)
     (initialize-store!)
     (init-basic-procedures)
     (cases program pgm
-      (a-program (exp1)
-                 (value-of/k (car exp1) (init-env) (end-cont))))))
-
+      (a-program (exps)
+                 (let* ([result (translate-declarations exps)]
+                        [let-without-body (car result)]
+                        [others (cdr result)])
+                  (map (lambda (exp)
+                        (value-of/k
+                          (let-without-body->let-exp let-without-body exp)
+                          (init-env)
+                          (end-cont)))
+                    others))))))
 
 ;; value-of/k : Exp * Env * Cont -> FinalAnswer
 (define value-of/k
@@ -171,9 +179,11 @@
 
 (define run
   (lambda (string)
-    (display 
-      (pretty-print-expval
-        (value-of-program (scan&parse string))))
+    (map (lambda (val)
+          (display 
+            (pretty-print-expval val))
+          (newline))
+      (values-of-program (scan&parse string)))
     (newline)))
 
 (define type-of-program
@@ -230,14 +240,27 @@
         (head `o` tail `o` tail [1, 2, 3])")
 |#
 
-(run "\\ (x :: int) -> (x + 1) 5")
+;;; (run "\\ (x :: int) -> (x + 1) 5")
 
-(run "let (f :: int) (x :: int) (y :: int) = x + y in (f 1 9)")
+;;; (run "let (f :: int) (x :: int) (y :: int) = x + y in (f 1 9)")
 
-(run "let (f :: bool) (x :: unit) = 100 (g :: int) (x :: int) (y :: int) = x - y in (g 43 1)")
+;;; (run "let (f :: bool) (x :: unit) = 100 (g :: int) (x :: int) (y :: int) = x - y in (g 43 1)")
 
-(run-type "42")
-(run-type "True")
-(run-type "\\(x :: int) -> (x + 1)")
-;;; (run-type "if True then 2 else False")
-(run-type "\\ (xs :: list) (ys :: list) -> ((head xs) + (head ys))")
+;;; (run-type "42")
+;;; (run-type "True")
+;;; (run-type "\\(x :: int) -> (x + 1)")
+;;; ;;; (run-type "if True then 2 else False")
+;;; (run-type "\\ (xs :: list) (ys :: list) -> ((head xs) + (head ys))")
+
+(run "(.) f g = \\ (x :: any) -> (f (g x));
+
+      (++) xs ys = if empty xs
+                   then ys
+                   else ((head xs):(tail xs ++ ys));
+
+      fact x = if x == 0
+               then 1
+               else (x * (fact (x - 1)));
+
+      head . tail . tail ([1] ++ [2, 3]);
+      fact 5")
