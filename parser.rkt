@@ -213,12 +213,18 @@
     (let* [(p-names-with-result-types (list-ref let-defs 0))
            (p-names (map (lambda (x) (list-ref x 0)) p-names-with-result-types))
            (p-result-types (map (lambda (x) (list-ref x 1)) p-names-with-result-types))
-          (b-vars-with-types (list-ref let-defs 1))
-          (p-bodies (list-ref let-defs 2))
-          (new-p-bodies (map to-one-arg-proc b-vars-with-types p-bodies))]
+           (ps-vars-with-types (list-ref let-defs 1))
+           (ps-vars (map (lambda (x)
+                           (map (lambda (b-var-with-type)(list-ref b-var-with-type 0)) x)) ps-vars-with-types))
+           (ps-vars-types (map (lambda (x)
+                                 (map (lambda (b-var-with-type)(list-ref b-var-with-type 1)) x)) ps-vars-with-types))
+           (p-bodies (list-ref let-defs 2))
+           (new-p-bodies (map to-one-arg-proc ps-vars-with-types p-bodies))]
     (let-exp
      p-names
      p-result-types
+     ps-vars
+     ps-vars-types
      new-p-bodies
      let-body))))
 

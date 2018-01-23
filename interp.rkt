@@ -55,7 +55,7 @@
                 (apply-cont cont 
                             (proc-val (procedure vars body env))))
       
-      (let-exp (p-names p-result-types p-bodies let-body)
+      (let-exp (p-names p-result-types ps-vars ps-vars-types p-bodies let-body)
                   (value-of/k let-body
                               (make-extend-env-rec p-names p-bodies env)
                               cont))
@@ -241,3 +241,24 @@
 (run-type "\\(x :: int) -> (x + 1)")
 ;;; (run-type "if True then 2 else False")
 (run-type "\\ (xs :: list) (ys :: list) -> ((head xs) + (head ys))")
+
+(run-type "let (f :: int) (x :: unit) = 100 (g :: int) (x :: int) (y :: int) (z :: list) = x - y in (g 43 1 [])")
+
+(run-type
+ "let (f :: int) (x :: int) (y :: unit) (z :: bool) (lst :: list) = 42 in f")
+
+(run-type
+ "let (even :: bool) (x :: int) = if x == 0 then True else (odd (x - 1))
+      (odd :: bool) (x :: int) = if x == 0 then False else (even(x - 1))
+      in (even 42)")
+
+(run
+ "let (even :: bool) (x :: int) = if x == 0 then True else (odd (x - 1))
+      (odd :: bool) (x :: int) = if x == 0 then False else (even(x - 1))
+      in (even 42)")
+
+(run-type
+ "let (fact :: int) (n :: int) = if n == 0 then 1 else (n * (fact (n - 1))) in (fact 5)")
+
+(run
+ "let (fact :: int) (n :: int) = if n == 0 then 1 else (n * (fact (n - 1))) in (fact 5)")

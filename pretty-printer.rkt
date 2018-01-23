@@ -68,7 +68,7 @@
             (string-append
               "(" ((pretty-exp indents) rator) ((pretty-exp indents) rand) ")"))
 
-          (let-exp (p-names p-result-types exps body)
+          (let-exp (p-names p-result-types ps-vars ps-vars-types exps body)
             (let ((one-let (lambda (var args exp)
                             (string-append
                               (string-join (map symbol->string (cons var args)) " ") " = " ((pretty-exp indents_2) exp)))))

@@ -30,7 +30,9 @@
   (let-exp
    (p-names (list-of symbol?))
    (p-result-types (list-of type?))
-   (exps (list-of expression?))
+   (ps-vars (list-of (list-of symbol?))) ;; original vars that were later moved to the bodies of its procedures - need to store that for type-checking let
+   (ps-vars-types (list-of (list-of type?))) ;; types of original vars - need to store that for type-checking let
+   (changed-p-bodies (list-of expression?))
    (body expression?))
   (cons-exp
    (head expression?)

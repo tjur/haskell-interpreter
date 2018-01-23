@@ -3,6 +3,8 @@
 (require "datatypes.rkt")
 (require "basic-procedures.rkt")
 (require "pretty-printer.rkt")
+(require (only-in racket/base
+                  foldr))
 
 (provide type-of-exp type-to-external-form)
 
@@ -18,6 +20,14 @@
              (equal? ty2 (any-type)))))
       (report-unequal-types ty1 ty2 exp))))
 
+(define check-many-types!
+  (lambda (types1 types2 exps)
+    (if (null? types1)
+        42
+        (begin
+          (check-equal-type! (car types1) (car types2) (car exps))
+          (check-many-types! (cdr types1) (cdr types2) (cdr exps))))))
+
 ;; report-unequal-types : Type * Type * Exp -> Unspecified
 (define report-unequal-types
   (lambda (ty1 ty2 exp)
@@ -27,7 +37,7 @@
                 (type-to-external-form ty2)
                 (pretty-print-exp exp))))
 
-;; type-to-external-form : Type -> List
+;; type-to-external-form : Type -> List | Sym
 (define type-to-external-form
   (lambda (ty)
     (cases type ty
@@ -92,43 +102,46 @@
                     (else
                      (report-rator-not-a-proc-type rator-type rator)))))
 
-      #|(number-op-exp (op exp1 exp2)
-                     (let ((ty1 (type-of exp1 tenv))
-                           (ty2 (type-of exp2 tenv)))
-                       (check-equal-type! ty1 (int-type) exp1)
-                       (check-equal-type! ty2 (int-type) exp2)
-                       (result-type-number-procedure op)))|#
-
-      #|(list-proc-exp (proc exp1)
-                     (let ((ty1 (type-of exp1 tenv)))
-                       (check-equal-type! ty1 (list-type) exp1)
-                       (result-type-list-procedure proc)))|#
-
       (cons-exp (head tail)
                 (let ((ty1 (type-of tail tenv)))
                   (check-equal-type! ty1 (list-type) tail)
                   (list-type)))
+      
+      (let-exp (p-names p-result-types ps-vars ps-vars-types p-bodies letrec-body)
+               (let* ([p-types
+                       (map (lambda (p-result-type p-vars-types)
+                              (foldr proc-type p-result-type p-vars-types)) p-result-types ps-vars-types)]
+                        
+                      [tenv-for-letrec-body
+                       (extend-tenv2* p-names p-types tenv)])
 
-      ;; TODO
-      #|
-      (let-exp (p-names p-result-types p-bodies letrec-body)
-                  (let ((tenv-for-letrec-body
-                         (extend-tenv p-name
-                                      (proc-type b-var-type p-result-type)
-                                      tenv)))
-                    (let ((p-body-type 
-                           (type-of p-body
-                                    (extend-tenv b-var b-var-type
-                                                 tenv-for-letrec-body)))) 
-                      (check-equal-type!
-                       p-body-type p-result-type p-body)
-                      (type-of letrec-body tenv-for-letrec-body))))
-      |#
+                 (begin
+                   (let ([truncated-p-bodies (map (lambda (p-body p-vars-types) (truncate p-body (length p-vars-types))) p-bodies ps-vars-types)])
+                     (check-many-types!
+                      p-result-types
+                      (map
+                       (lambda (p-body p-vars p-vars-types) (type-of p-body (extend-tenv2* p-vars p-vars-types tenv-for-letrec-body)))
+                       truncated-p-bodies ps-vars ps-vars-types)
+                      truncated-p-bodies))
+                      
+                   (type-of letrec-body tenv-for-letrec-body))))
 
       (else (eopl:error
              "Type checker is not defined for expression: ~s" exp))
 
       )))
+
+
+;; removes added earlier vars to expression (as a lambda-exp) to have proper type of expression
+(define truncate
+  (lambda (exp i)
+    (if (zero? i)
+        exp
+        (cases expression exp
+          (lambda-exp (var ty body)
+                      (truncate body (- i 1)))
+          (else (eopl:error
+                 "Expected lambda-exp but got: ~s" exp))))))
 
 
 (define report-rator-not-a-proc-type
@@ -156,6 +169,12 @@
       (extend-tenv* (cdr lst)
         (extend-tenv (caar lst) (cdar lst) tenv)))))
 
+(define extend-tenv2*
+  (lambda (vars types tenv)
+    (if (null? vars) tenv
+      (extend-tenv2* (cdr vars) (cdr types)
+        (extend-tenv (car vars) (car types) tenv)))))
+
 (define apply-tenv 
   (lambda (tenv sym)
     (cases type-environment tenv
@@ -169,7 +188,4 @@
 (define init-tenv
   (lambda ()
     (extend-tenv* basic-procedures-types
-      (extend-tenv 'x (int-type) 
-                  (extend-tenv 'v (int-type)
-                                (extend-tenv 'i (int-type)
-                                            (empty-tenv)))))))
+                  (empty-tenv))))
