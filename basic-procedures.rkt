@@ -9,7 +9,7 @@
 (provide (all-defined-out))
 
 (define number-ops-list
-  '(+ - * / ==))
+  '(+ - * / == < <= > >= !=))
 
 (define create-number-procedure
   (lambda (op)
@@ -37,15 +37,31 @@
       ['- (num-val (- val1 val2))]
       ['* (num-val (* val1 val2))]
       ['/ (num-val (/ val1 val2))]
-      ['== (bool-val (= val1 val2))])))
+      ['== (bool-val (= val1 val2))]
+      ['< (bool-val (< val1 val2))]
+      ['<= (bool-val (<= val1 val2))]
+      ['> (bool-val (> val1 val2))]
+      ['>= (bool-val (>= val1 val2))]
+      ['!= (bool-val (not (= val1 val2)))])))
+
+(define number-procedure-type-int-int-int
+  (proc-type (int-type) (proc-type (int-type) (int-type))))
+
+(define number-procedure-type-int-int-bool
+  (proc-type (int-type) (proc-type (int-type) (bool-type))))
 
 (define number-procedure-types
   (list
-    (cons '+ (proc-type (int-type) (proc-type (int-type) (int-type))))
-    (cons '- (proc-type (int-type) (proc-type (int-type) (int-type))))
-    (cons '* (proc-type (int-type) (proc-type (int-type) (int-type))))
-    (cons '/ (proc-type (int-type) (proc-type (int-type) (int-type))))
-    (cons '== (proc-type (int-type) (proc-type (int-type) (bool-type))))))
+    (cons '+ number-procedure-type-int-int-int)
+    (cons '- number-procedure-type-int-int-int)
+    (cons '* number-procedure-type-int-int-int)
+    (cons '/ number-procedure-type-int-int-int)
+    (cons '== number-procedure-type-int-int-bool)
+    (cons '< number-procedure-type-int-int-bool)
+    (cons '<= number-procedure-type-int-int-bool)
+    (cons '> number-procedure-type-int-int-bool)
+    (cons '>= number-procedure-type-int-int-bool)
+    (cons '!= number-procedure-type-int-int-bool)))
 
 (define create-list-procedure
   (lambda (proc)
