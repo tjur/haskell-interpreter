@@ -125,6 +125,8 @@
                       (type-of letrec-body tenv-for-letrec-body))))
       |#
 
+      (missing-case-exp () (any-type))
+
       (else (eopl:error
              "Type checker is not defined for expression: ~s" exp))
 

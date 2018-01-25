@@ -9,7 +9,7 @@
 (provide (all-defined-out))
 
 (define number-ops-list
-  '(+ - * / == < <= > >= !=))
+  '(+ - * / < <= > >=))
 
 (define create-number-procedure
   (lambda (op)
@@ -37,12 +37,10 @@
       ['- (num-val (- val1 val2))]
       ['* (num-val (* val1 val2))]
       ['/ (num-val (/ val1 val2))]
-      ['== (bool-val (= val1 val2))]
       ['< (bool-val (< val1 val2))]
       ['<= (bool-val (<= val1 val2))]
       ['> (bool-val (> val1 val2))]
-      ['>= (bool-val (>= val1 val2))]
-      ['!= (bool-val (not (= val1 val2)))])))
+      ['>= (bool-val (>= val1 val2))])))
 
 (define number-procedure-type-int-int-int
   (proc-type (int-type) (proc-type (int-type) (int-type))))
@@ -56,12 +54,10 @@
     (cons '- number-procedure-type-int-int-int)
     (cons '* number-procedure-type-int-int-int)
     (cons '/ number-procedure-type-int-int-int)
-    (cons '== number-procedure-type-int-int-bool)
     (cons '< number-procedure-type-int-int-bool)
     (cons '<= number-procedure-type-int-int-bool)
     (cons '> number-procedure-type-int-int-bool)
-    (cons '>= number-procedure-type-int-int-bool)
-    (cons '!= number-procedure-type-int-int-bool)))
+    (cons '>= number-procedure-type-int-int-bool)))
 
 (define create-list-procedure
   (lambda (proc)
@@ -90,16 +86,54 @@
     (cons 'tail (proc-type (list-type) (list-type)))
     (cons 'empty (proc-type (list-type) (list-type)))))
 
+(define common-operators
+  (lambda ()
+    (list
+      (cons '==
+        (newref
+              (proc-val
+                (procedure
+                  'a
+                  (lambda-exp
+                    'b
+                    (any-type)
+                    (common-op-exp '== (var-exp 'a) (var-exp 'b)))
+                  (empty-env)))))
+
+      (cons '!=
+        (newref
+              (proc-val
+                (procedure
+                  'a
+                  (lambda-exp
+                    'b
+                    (any-type)
+                    (common-op-exp '!= (var-exp 'a) (var-exp 'b)))
+                  (empty-env))))))))
+
+(define eval-common-operator
+  (lambda (op val1 val2)
+    (match op
+      ['== (bool-val (equal? val1 val2))]
+      ['!= (bool-val (not (equal? val1 val2)))])))
+
+(define common-operators-types
+  (list
+    (cons '== (proc-type (any-type) (proc-type (any-type) (bool-type))))
+    (cons '!= (proc-type (any-type) (proc-type (any-type) (bool-type))))))
+
 (define basic-procedures-list
   (lambda ()
     (append
       (number-procedures)
-      (list-procedures))))
+      (list-procedures)
+      (common-operators))))
 
 (define basic-procedures-types
   (append
     number-procedure-types
-    list-procedure-types))
+    list-procedure-types
+    common-operators-types))
 
 (define basic-procedures-env "uninitialized!")
 

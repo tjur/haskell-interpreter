@@ -99,7 +99,15 @@
               
           (list-proc-exp (proc exp1)
             ((pretty-exp indents)
-              (call-exp (var-exp proc) (list exp1)))))))))
+              (call-exp (var-exp proc) (list exp1))))
+
+          (common-op-exp (op exp1 exp2)
+            ((pretty-exp indents)
+              (call-exp (var-exp op) (list exp1 exp2))))
+
+          (missing-case-exp () "")
+
+          )))))
 
 
 (define pretty-print-val-constr

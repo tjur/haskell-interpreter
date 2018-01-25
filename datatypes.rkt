@@ -51,7 +51,12 @@
    (exp2 expression?))
   (list-proc-exp
    (proc symbol?)
-   (exp1 expression?)))
+   (exp1 expression?))
+  (common-op-exp
+   (op symbol?)
+   (exp1 expression?)
+   (exp2 expression?))
+  (missing-case-exp))
 
 (define-datatype
   val-constr-exp
@@ -217,4 +222,13 @@
    (saved-cont continuation?))
   (list-proc-cont
    (op symbol?)
+   (saved-cont continuation?))
+  (common-op-cont1
+   (op symbol?)
+   (exp2 expression?)
+   (saved-env environment?)
+   (saved-cont continuation?))
+  (common-op-cont2
+   (op symbol?)
+   (val1 expval?)
    (saved-cont continuation?)))

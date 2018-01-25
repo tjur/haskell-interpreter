@@ -84,6 +84,10 @@
                       (value-of/k exp1 env
                                   (list-proc-cont proc cont)))
 
+      (common-op-exp (op exp1 exp2)
+                      (value-of/k exp1 env
+                                  (common-op-cont1 op exp2 env cont)))
+
       (else (eopl:error "Not implemented for ~s" exp))
       
       )))
@@ -145,6 +149,14 @@
                           (if (expval? val1)
                             (apply-cont saved-cont val1)
                             (value-of-thunk/k val1 (thunk-cont ref1 saved-cont)))))
+
+      (common-op-cont1 (op exp2 saved-env saved-cont)
+                        (value-of/k exp2 saved-env
+                                    (common-op-cont2 op val saved-cont)))
+
+      (common-op-cont2 (op val1 saved-cont)
+                        (apply-cont saved-cont
+                                    (eval-common-operator op val1 val)))
 
       )))
 
@@ -252,15 +264,29 @@
 ;;; ;;; (run-type "if True then 2 else False")
 ;;; (run-type "\\ (xs :: list) (ys :: list) -> ((head xs) + (head ys))")
 
-(run "(.) f g = \\ (x :: any) -> (f (g x));
+;;; (run "(.) f g = \\ (x :: any) -> (f (g x));
 
-      (++) xs ys = if empty xs
-                   then ys
-                   else ((head xs):(tail xs ++ ys));
+;;;       (++) xs ys = if empty xs
+;;;                    then ys
+;;;                    else ((head xs):(tail xs ++ ys));
 
-      fact x = if x == 0
-               then 1
-               else (x * (fact (x - 1)));
+;;;       fact x = if x == 0
+;;;                then 1
+;;;                else (x * (fact (x - 1)));
 
-      head . tail . tail ([1] ++ [2, 3]);
+;;;       head . tail . tail ([1] ++ [2, 3]);
+;;;       fact 5")
+
+;;; (display
+;;;   (cases program (scan&parse "f x = x; f 5")
+;;;     (a-program (exps)
+;;;       (translate-declarations exps))))
+
+(run "fact 0 = 1;
+      fact n = n * (fact (n - 1));
       fact 5")
+
+(run "and True True = True;
+      and x y = False;
+      
+      True `and` False")
