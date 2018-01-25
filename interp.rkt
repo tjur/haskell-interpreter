@@ -7,18 +7,72 @@
 (require "pretty-printer.rkt")
 (require "basic-procedures.rkt")
 (require "type-checker.rkt")
+(require "data-expression.rkt")
+(require (only-in racket/base
+                  filter))
+(require (only-in racket/string
+                  string-join))
 
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
 
-;; value-of-program : Program -> FinalAnswer
-(define value-of-program 
+;; run-program : Program -> ()
+(define run-program 
   (lambda (pgm)
     (initialize-store!)
     (init-basic-procedures)
     (cases program pgm
-      (a-program (exp1)
-                 (value-of/k (car exp1) (init-env) (end-cont))))))
+      (a-program (global-exps)
+                 (let ([expressions
+                        (filter (lambda (global-exp) (expression? global-exp)) global-exps)]
+                       [data-exps
+                        (filter (lambda (global-exp) (data-exp? global-exp)) global-exps)])
+
+                   (let* ([env (process-data-exps data-exps (init-env))]
+                          [tenv (create-tenv (init-tenv) env)])
+                     (evaluate-expressions expressions tenv env)))))))
+
+
+(define (create-tenv tenv env)
+  (define create-tenv-aux
+    (lambda (tenv env)
+      (cases environment env
+        (empty-env () tenv)
+        (extend-env (val-constr-name ref saved-env)
+                    (let* ([exp
+                            (cases thunk (deref ref)
+                              (a-thunk (exp _) exp))]
+                           [val-constr-type (type-of-exp exp)])
+                      (create-tenv-aux
+                       (extend-tenv val-constr-name val-constr-type tenv)
+                       saved-env)))
+        (else (eopl:error 'create-tenv "Expected empty-env or extend-env but found: ~s" env)))))
+  
+  (create-tenv-aux tenv env))
+
+
+(define (evaluate-expressions exps tenv env)
+  (define eval-exp-aux
+    (lambda (exps i)
+      (if (null? exps)
+          (display "No expression to evaluate!\n")
+          (let* ([exp (car exps)]
+                 [ty (type-of (car exps) tenv)]
+                 [val (value-of/k (car exps) env (end-cont))])
+            (begin
+              (display (pretty-print-exp-result val ty i))
+              (if (null? (cdr exps)) ;; last expression
+                  42
+                  (eval-exp-aux (cdr exps) (+ i 1))))))))
+
+  (eval-exp-aux exps 1))
+
+
+(define pretty-print-val-constr
+  (lambda (val)
+    (cases val-constr-exp val
+      (a-val-constr (name types)
+        (string-join (map symbol->string (cons name types)) " ")))))
 
 
 ;; value-of/k : Exp * Env * Cont -> FinalAnswer
@@ -43,6 +97,10 @@
 
       (list-exp (exps)
                 (value-of-list/k exps env cont))
+
+      (type-value-exp (id val-constr-name b-vars ty)
+                      (let ([values (map (lambda (var) (apply-env env var)) b-vars)])
+                        (apply-cont cont (data-exp-val val-constr-name values ty))))
 
       (cons-exp (exp1 exp2)
                 (apply-cont cont
@@ -85,7 +143,18 @@
 (define apply-cont
   (lambda (cont val)
     (cases continuation cont
-      (end-cont () val)
+      (end-cont ()
+                (cases expval val
+                  (list-val (refs)
+                            (begin
+                                  (map eval-thunk-in-ref refs) ;; refs values are changed
+                                  val))
+                  (data-exp-val (val-constr-name refs type)
+                                (begin
+                                  (map eval-thunk-in-ref refs) ;; refs values are changed
+                                  val))
+                  (else val)))
+                               
       
       (if-cont (exp2 exp3 saved-env saved-cont)
                     (if (expval->bool val)
@@ -168,13 +237,17 @@
                (value-of/k exp1 saved-env cont)))))
 
 
+;; eval-thunk-in-ref : Ref -> Expval (evaluates thunk in ref)
+(define eval-thunk-in-ref
+  (lambda (ref)
+    (let ((w (deref ref)))
+      (if (expval? w)
+          (apply-cont (end-cont) w)
+          (value-of-thunk/k w (thunk-cont ref (end-cont)))))))
 
 (define run
   (lambda (string)
-    (display 
-      (pretty-print-expval
-        (value-of-program (scan&parse string))))
-    (newline)))
+    (run-program (scan&parse string))))
 
 (define type-of-program
     (lambda (pgm)
@@ -230,6 +303,8 @@
         (head `o` tail `o` tail [1, 2, 3])")
 |#
 
+
+#|
 (run "\\ (x :: int) -> (x + 1) 5")
 
 (run "let (f :: int) (x :: int) (y :: int) = x + y in (f 1 9)")
@@ -262,3 +337,15 @@
 
 (run
  "let (fact :: int) (n :: int) = if n == 0 then 1 else (n * (fact (n - 1))) in (fact 5)")
+|#
+
+(run "data Tree = Empty | Leaf int | Node Tree int Tree;
+             data Bin = Zero | One;
+
+             let (f :: Tree) (x :: Tree) = (Leaf y)
+                 (y :: int) = 26 + 1 in
+              (f (Node (Leaf 42) 27 (Node (Leaf 42) 27 (Leaf 1))));
+
+             if 2 == 3 then Zero else One;
+
+             let (lst :: list) = [1+2, 4*5, 100 - 1] in lst")

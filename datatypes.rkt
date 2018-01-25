@@ -7,7 +7,7 @@
 ;;;;;;;;;;;;;;;; program and expression ;;;;;;;;;;;;;;;;
 
 (define-datatype program program?
-  (a-program (a-program-exp (list-of expression?))))
+  (a-program (a-program-exp (list-of (lambda (x) (or (expression? x) (data-exp? x)))))))
 
 (define-datatype expression expression?
   (const-num-exp (const number?))
@@ -16,6 +16,11 @@
   (var-exp (var symbol?))
   (list-exp
    (list list?))
+  (type-value-exp ;; value which type is a type defined by some data-exp
+   (id number?)
+   (val-constr-name symbol?) ;; name of value contructor that creates that value
+   (b-vars (list-of symbol?)) ;; b-vars that takes value constr before it returns that value
+   (type type?))
   (if-exp
    (if-exp1 expression?)
    (if-exp2 expression?)
@@ -37,9 +42,6 @@
   (cons-exp
    (head expression?)
    (tail expression?))
-  (data-exp
-   (type-constr symbol?)
-   (val-constrs (list-of val-constr-exp?)))
   (unpack-exp
    (val-constr symbol?)
    (values (list-of expression?)))
@@ -55,12 +57,18 @@
    (proc symbol?)
    (exp1 expression?)))
 
-(define-datatype
-  val-constr-exp
-  val-constr-exp?
-  (val-constr
+
+;;;;;;;;;;;;;;;; data expression ;;;;;;;;;;;;;;;;
+
+(define-datatype data-exp data-exp?
+  (a-data-exp
+   (data-exp-type type?)
+   (val-constrs (list-of val-constr-exp?))))
+
+(define-datatype val-constr-exp val-constr-exp?
+  (a-val-constr
    (name symbol?)
-   (types (list-of symbol?))))
+   (types (list-of type?))))
 
 
 ;;;;;;;;;;;;;;;; types ;;;;;;;;;;;;;;;;
@@ -73,9 +81,8 @@
   (proc-type
    (var-type type?)
    (body-type type?))
-  (data-type
-   (val-constr-name symbol?)
-   (types (list-of type?)))
+  (data-exp-type
+   (type-constr-name symbol?))
   (any-type))
 
 ;;;;;;;;;;;;;;;; expressed values ;;;;;;;;;;;;;;;;
@@ -89,7 +96,11 @@
   (list-val
    (list (list-of reference?)))
   (proc-val 
-   (proc proc?)))
+   (proc proc?))
+  (data-exp-val
+   (val-constr-name symbol?)
+   (values (list-of reference?))
+   (type type?))) ;; type of the value
 
 ;;; extractors:
 
@@ -131,7 +142,8 @@
       (bool-val (bool) bool)
       (proc-val (proc) proc)
       (list-val (lst) lst)
-      (unit-val () (an-unit)))))
+      (unit-val () (an-unit))
+      (data-exp-val (ty val name) val))))
 
 (define expval-extractor-error
   (lambda (variant value)

@@ -6,7 +6,7 @@
 (require (only-in racket/base
                   foldr))
 
-(provide type-of-exp type-to-external-form)
+(provide type-of-exp type-of type-to-external-form init-tenv extend-tenv)
 
 
 ;; check-equal-type! : Type * Type * Exp -> Unspecified
@@ -51,7 +51,9 @@
                   (type-to-external-form arg-type)
                   '->
                   (type-to-external-form result-type)))
-      (else 'not-implemented)
+      (data-exp-type (name) name)
+      
+      (else (eopl:error 'type-to-external-form "Not implemented for type: ~s" ty))
       
       )))
 
@@ -74,6 +76,8 @@
       (unit-exp () (unit-type))
 
       (list-exp (lst) (list-type))
+
+      (type-value-exp (id val-constr-name b-vars type) type)
 
       (var-exp (var) (apply-tenv tenv var))
 
@@ -126,7 +130,7 @@
                       
                    (type-of letrec-body tenv-for-letrec-body))))
 
-      (else (eopl:error
+      (else (eopl:error 'type-error
              "Type checker is not defined for expression: ~s" exp))
 
       )))
