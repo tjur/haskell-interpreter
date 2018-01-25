@@ -12,12 +12,7 @@
 ;; check-equal-type! : Type * Type * Exp -> Unspecified
 (define check-equal-type!
   (lambda (ty1 ty2 exp)
-    (when (not
-           (or
-            (equal? ty1 ty2)
-            (or
-             (equal? ty1 (any-type))
-             (equal? ty2 (any-type)))))
+    (when (not (equal? ty1 ty2))
       (report-unequal-types ty1 ty2 exp))))
 
 (define check-many-types!
@@ -44,8 +39,7 @@
       (int-type () 'int)
       (bool-type () 'bool)
       (unit-type () '())
-      (list-type () 'list)
-      (any-type () 'any)
+      (int-list-type () 'int-list)
       (proc-type (arg-type result-type)
                  (list
                   (type-to-external-form arg-type)
@@ -75,7 +69,10 @@
 
       (unit-exp () (unit-type))
 
-      (list-exp (lst) (list-type))
+      (list-exp (lst)
+                (begin
+                  (map (lambda (exp1) (check-equal-type! (type-of exp1 tenv) (int-type) exp1)) lst)
+                  (int-list-type)))
 
       (type-value-exp (id val-constr-name b-vars type) type)
 
@@ -107,9 +104,11 @@
                      (report-rator-not-a-proc-type rator-type rator)))))
 
       (cons-exp (head tail)
-                (let ((ty1 (type-of tail tenv)))
-                  (check-equal-type! ty1 (list-type) tail)
-                  (list-type)))
+                (let ((ty1 (type-of head tenv))
+                      (ty2 (type-of tail tenv)))
+                  (check-equal-type! ty1 (int-type) head)
+                  (check-equal-type! ty2 (int-list-type) tail)
+                  (int-list-type)))
       
       (let-exp (p-names p-result-types ps-vars ps-vars-types p-bodies letrec-body)
                (let* ([p-types

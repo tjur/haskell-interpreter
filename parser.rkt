@@ -23,7 +23,7 @@
 
 (define-empty-tokens empty-tokens (
                                    <unit>
-                                   <int-type> <bool-type> <unit-type> <list-type>
+                                   <int-type> <bool-type> <unit-type> <int-list-type>
                                    COLON DOUBLECOLON SEMICOLON COMMA GRAVE
                                    OPENB CLOSEB OPENSB CLOSESB
                                    IF THEN ELSE
@@ -60,7 +60,7 @@
    ["int" (token-<int-type>)]
    ["bool" (token-<bool-type>)]
    ["unit" (token-<unit-type>)]
-   ["list" (token-<list-type>)]
+   ["int-list" (token-<int-list-type>)]
    ["if" (token-IF)]
    ["then" (token-THEN)]
    ["else" (token-ELSE)]
@@ -97,7 +97,7 @@
     [<type> [(<int-type>) (int-type)]
             [(<bool-type>) (bool-type)]
             [(<unit-type>) (unit-type)]
-            [(<list-type>) (list-type)]
+            [(<int-list-type>) (int-list-type)]
             [(<type> ARROW <type>) (proc-type $1 $3)]
             [(<big-letter-name>) (create-data-exp-type $1)]
             [(<identifier>) (create-data-exp-type $1)]]

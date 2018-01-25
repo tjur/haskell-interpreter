@@ -176,8 +176,7 @@
       (int-type () 'int)
       (bool-type () 'bool)
       (unit-type () '())
-      (list-type () 'list)
-      (any-type () 'any)
+      (int-list-type () 'int-list)
       (proc-type (arg-type result-type)
                  (list
                   (type-to-external-form arg-type)

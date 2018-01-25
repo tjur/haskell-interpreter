@@ -348,4 +348,4 @@
 
              if 2 == 3 then Zero else One;
 
-             let (lst :: list) = [1+2, 4*5, 100 - 1] in lst")
+             let (lst :: int-list) = [1+2, 4*5, 100 - 1] in ((head lst) : (tail lst))")

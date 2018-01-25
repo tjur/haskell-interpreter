@@ -15,7 +15,7 @@
   (unit-exp)
   (var-exp (var symbol?))
   (list-exp
-   (list list?))
+   (list (list-of expression?)))
   (type-value-exp ;; value which type is a type defined by some data-exp
    (id number?)
    (val-constr-name symbol?) ;; name of value contructor that creates that value
@@ -77,13 +77,12 @@
   (int-type)
   (bool-type)
   (unit-type)
-  (list-type) ;; lists are heterogeneous
+  (int-list-type)
   (proc-type
    (var-type type?)
    (body-type type?))
   (data-exp-type
-   (type-constr-name symbol?))
-  (any-type))
+   (type-constr-name symbol?)))
 
 ;;;;;;;;;;;;;;;; expressed values ;;;;;;;;;;;;;;;;
 

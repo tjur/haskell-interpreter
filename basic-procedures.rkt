@@ -86,9 +86,9 @@
 
 (define list-procedure-types
   (list
-    (cons 'head (proc-type (list-type) (any-type)))
-    (cons 'tail (proc-type (list-type) (list-type)))
-    (cons 'empty (proc-type (list-type) (list-type)))))
+    (cons 'head (proc-type (int-list-type) (int-type)))
+    (cons 'tail (proc-type (int-list-type) (int-list-type)))
+    (cons 'empty (proc-type (int-list-type) (bool-type)))))
 
 (define basic-procedures-list
   (lambda ()
