@@ -54,22 +54,13 @@
       (else
         (equal? arg1 arg2)))))
 
-(define any?
-  (lambda (x) #t))
-
 (define-datatype argument argument?
   (an-argument
-    (pattern-exps any?)
-    (arguments any?))
+    (pattern-exps (list-of expression?))
+    (arguments (list-of (list-of argument?))))
   (ending-argument
-    (pattern-exps any?)
-    (bodies any?)))
-
-(define argument->exp
-  (lambda (arg)
-    (cases argument arg
-      (an-argument (exp args) exp)
-      (ending-argument (exp body) exp))))
+    (pattern-exps (list-of expression?))
+    (bodies (list-of expression?))))
 
 (define var-exp?
   (lambda (exp)
@@ -89,7 +80,7 @@
         matched-var-patterns
         not-matched))))
 
-(define group-it
+(define group-arguments
   (lambda (args-bodies)
     (if (null? args-bodies) '()
       (let* ([arguments (caar args-bodies)]
@@ -106,10 +97,10 @@
             (an-argument
               (map caaar matches)
               (map (lambda (arg-body-list)
-                    (group-it (map (lambda (arg-body)
+                    (group-arguments (map (lambda (arg-body)
                                     (cons (cdar arg-body) (cdr arg-body))) arg-body-list))) matches)))
 
-          (group-it not-matched))))))
+          (group-arguments not-matched))))))
                 
 (define get-pattern-var
   (lambda (pattern-var-n)
@@ -145,19 +136,19 @@
 
           (else (eopl:error "impossible!")))))))
 
-(define translate-some
-  (lambda (pattern-var pattern-var-n fkin-grouped)
-    (if (null? fkin-grouped) (missing-case-exp)
-      (let* ([arg (car fkin-grouped)]
+(define translate-to-lambdas
+  (lambda (pattern-var pattern-var-n grouped-arguments-list)
+    (if (null? grouped-arguments-list) (missing-case-exp)
+      (let* ([arg (car grouped-arguments-list)]
              [next-pattern-var (get-pattern-var (+ pattern-var-n 1))]
-             [next-case-body (translate-some pattern-var pattern-var-n (cdr fkin-grouped))])
+             [next-case-body (translate-to-lambdas pattern-var pattern-var-n (cdr grouped-arguments-list))])
         (cases argument arg
           (an-argument (pattern-exps grouped-args-list)
             (let* ([next-bodies (map (lambda (grouped-args)
                                       (lambda-exp
                                         next-pattern-var
                                         (any-type)
-                                        (translate-some
+                                        (translate-to-lambdas
                                           next-pattern-var
                                           (+ pattern-var-n 1)
                                           grouped-args))) grouped-args-list)])
@@ -166,24 +157,18 @@
           (ending-argument (pattern-exps bodies)
             (get-match-exp pattern-var pattern-exps bodies next-case-body)))))))
 
+(define declaration-exp->var
+  (lambda (declaration)
+    (cases expression declaration
+      (declaration-exp (var args body) var)
+      (else (eopl:error "impossible!")))))
+
 (define get-same-and-rest-declarations
   (lambda (var declarations)
-    (if (null? declarations) (cons '() '())
-      (let* ([declaration (car declarations)]
-             [result (get-same-and-rest-declarations var (cdr declarations))]
-             [same (car result)]
-             [rest (cdr result)])
-        (cases expression declaration
-          (declaration-exp (var1 arguments body)
-            (if (eq? var var1)
-              (cons
-                (cons declaration same)
-                rest)
-              
-              (cons
-                same
-                (cons declaration rest))))
-          (else (eopl:error "THATS IMPOSSIBLE!")))))))
+    (let ([filter-lambda (lambda (declaration) (eq? var (declaration-exp->var declaration)))])
+      (cons
+        (filter filter-lambda declarations)
+        (filter (lambda (x) (not (filter-lambda x))) declarations)))))
 
 (define group-declarations-by-var
   (lambda (declarations)
@@ -216,7 +201,7 @@
                             (list
                               var
                               (any-type)
-                              (translate-some2 args-body-list))))
+                              (start-translations args-body-list))))
                         declarations-grouped)]
            [joined (join3 groups)])
       (no-body-let
@@ -224,17 +209,17 @@
         (list-ref joined 1)
         (list-ref joined 2)))))
 
-(define translate-some2
+(define start-translations
   (lambda (args-body-list)
-    (if (null? (caar args-body-list))  ;; pusta lista argumentów
+    (if (null? (caar args-body-list))
       (cdar args-body-list)
       (lambda-exp
         (get-pattern-var 0)
         (any-type)
-        (translate-some
+        (translate-to-lambdas
           (get-pattern-var 0)
           0
-          (group-it args-body-list))))))
+          (group-arguments args-body-list))))))
 
 (define join3
   (lambda (lst)

@@ -277,11 +277,6 @@
 ;;;       head . tail . tail ([1] ++ [2, 3]);
 ;;;       fact 5")
 
-;;; (display
-;;;   (cases program (scan&parse "f x = x; f 5")
-;;;     (a-program (exps)
-;;;       (translate-declarations exps))))
-
 (run "fact 0 = 1;
       fact n = n * (fact (n - 1));
       fact 5")
