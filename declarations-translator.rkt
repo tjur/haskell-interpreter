@@ -1,6 +1,6 @@
 #lang eopl
 
-(require (only-in racket/base foldr))
+(require (only-in racket/base foldr filter))
 (require "datatypes.rkt")
 (require "parser.rkt")
 
@@ -46,27 +46,24 @@
           (translate-to-let-without-body declarations)
           others)))))
 
-
-
-
-(define same-arguments?
+(define matching-arguments?
   (lambda (arg1 arg2)
-    (cases expression arg1
-      (var-exp (var1)
-        (cases expression arg2
-          (var-exp (var2)
-            #t)
-          (else #f)))
-      
-      (else (equal? arg1 arg2)))))  ;; TODO: lists? & Datatypes
+    (cases expression arg2
+      (var-exp (var2)
+        #t)
+      (else
+        (equal? arg1 arg2)))))
+
+(define any?
+  (lambda (x) #t))
 
 (define-datatype argument argument?
   (an-argument
-    (exp expression?)
-    (arguments (list-of argument?)))
+    (pattern-exps any?)
+    (arguments any?))
   (ending-argument
-    (exp expression?)
-    (body expression?)))
+    (pattern-exps any?)
+    (bodies any?)))
 
 (define argument->exp
   (lambda (arg)
@@ -74,132 +71,100 @@
       (an-argument (exp args) exp)
       (ending-argument (exp body) exp))))
 
-;; get-same-and-rest : List(Exp) x List(List(Exp)) x List(Exp) -> (List(List(Exp)) x List(Exp)) x (List(List(Exp)) x List(Exp))
+(define var-exp?
+  (lambda (exp)
+    (cases expression exp
+      (var-exp (var) #t)
+      (else #f))))
+
 (define get-same-and-rest
-  (lambda (args arguments-list bodies)
-    (if (null? arguments-list) (cons (cons '() '()) (cons '() '()))
-      (let* ([result (get-same-and-rest args (cdr arguments-list) (cdr bodies))]
-             [same (car result)]
-             [same-arguments (car same)]
-             [same-bodies (cdr same)]
-             [rest (cdr result)]
-             [rest-arguments (car rest)]
-             [rest-bodies (cdr rest)])
-        (if (same-arguments? (car args) (caar arguments-list))
-          (cons
-            (cons
-              (cons (car arguments-list) same-arguments)
-              (cons (car bodies) same-bodies))
-            rest)
-
-          (cons
-            same
-            (cons
-              (cons (car arguments-list) rest-arguments)
-              (cons (car bodies) rest-bodies))))))))
-
+  (lambda (args args-bodies)
+    (let* ([matching-lambda (lambda (arg-body) (matching-arguments? (car args) (caar arg-body)))]
+           [matched (filter matching-lambda args-bodies)]
+           [not-matched (filter (lambda (x) (not (matching-lambda x))) args-bodies)]
+           [vars-pattern-lambda (lambda (arg-body) (var-exp? (caar arg-body)))]
+           [matched-var-patterns (filter vars-pattern-lambda matched)])
+      (list
+        matched
+        matched-var-patterns
+        not-matched))))
 
 (define group-it
-  (lambda (arguments-list bodies)
-    (if (null? arguments-list) '()
-      (let* ([arguments (car arguments-list)]
-             [result (get-same-and-rest arguments arguments-list bodies)]
-             [same (car result)]
-             [same-arguments (car same)]
-             [same-bodies (cdr same)]
-             [rest (cdr result)]
-             [rest-arguments (car rest)]
-             [rest-bodies (cdr rest)])
+  (lambda (args-bodies)
+    (if (null? args-bodies) '()
+      (let* ([arguments (caar args-bodies)]
+             [result (get-same-and-rest arguments args-bodies)]
+             [matched-other-patterns (list-ref result 0)]
+             [matched-var-patterns (list-ref result 1)]
+             [not-matched (list-ref result 2)]
+             [matches (filter (lambda (xs) (not (null? xs))) (list matched-other-patterns matched-var-patterns))])
         (cons
           (if (null? (cdr arguments))
             (ending-argument
-              (car arguments)
-              (car same-bodies))
+              (map caaar matches)
+              (map cdar matches))
             (an-argument
-              (car arguments)
-              (group-it
-                (map cdr same-arguments)
-                same-bodies)))
-          
-          (group-it
-            rest-arguments
-            rest-bodies))))))
+              (map caaar matches)
+              (map (lambda (arg-body-list)
+                    (group-it (map (lambda (arg-body)
+                                    (cons (cdar arg-body) (cdr arg-body))) arg-body-list))) matches)))
 
+          (group-it not-matched))))))
+                
 (define get-pattern-var
   (lambda (pattern-var-n)
     (string->symbol (string-append "_$" (number->string pattern-var-n) "_"))))
+
+(define get-match-exp
+  (lambda (pattern-var pattern-exps then-bodies else-body)
+    (if (null? pattern-exps) else-body
+      (let* ([pattern-exp (car pattern-exps)]
+             [then-body (car then-bodies)]
+             [simple-match (lambda ()
+                            (if-exp
+                              (call-exp
+                                (call-exp (var-exp '==) (var-exp pattern-var))
+                                pattern-exp)
+                              then-body
+                              (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)))])
+        (cases expression pattern-exp
+          (const-num-exp (n)
+            (simple-match))
+
+          (const-bool-exp (b)
+            (simple-match))
+
+          (unit-exp ()
+            (simple-match))
+
+          ;; TODO: lists & Datatypes
+
+          (var-exp (var)
+            (let-exp (list var) (list (any-type)) (list (var-exp pattern-var))
+              then-body))
+
+          (else (eopl:error "impossible!")))))))
 
 (define translate-some
   (lambda (pattern-var pattern-var-n fkin-grouped)
     (if (null? fkin-grouped) (missing-case-exp)
       (let* ([arg (car fkin-grouped)]
-            [next-pattern-var (get-pattern-var (+ pattern-var-n 1))])
+             [next-pattern-var (get-pattern-var (+ pattern-var-n 1))]
+             [next-case-body (translate-some pattern-var pattern-var-n (cdr fkin-grouped))])
         (cases argument arg
-          (an-argument (pattern-exp grouped-args)
-            (let* ([next-body (lambda-exp
-                                next-pattern-var
-                                (any-type)
-                                (translate-some
-                                  next-pattern-var
-                                  (+ pattern-var-n 1)
-                                  grouped-args))]
-                  [simple-match (lambda ()
-                                  (if-exp
-                                    (call-exp
-                                      (call-exp (var-exp '==) (var-exp pattern-var))
-                                      pattern-exp)
-                                    next-body
-                                    (translate-some
-                                      pattern-var
-                                      pattern-var-n
-                                      (cdr fkin-grouped))))])
+          (an-argument (pattern-exps grouped-args-list)
+            (let* ([next-bodies (map (lambda (grouped-args)
+                                      (lambda-exp
+                                        next-pattern-var
+                                        (any-type)
+                                        (translate-some
+                                          next-pattern-var
+                                          (+ pattern-var-n 1)
+                                          grouped-args))) grouped-args-list)])
+              (get-match-exp pattern-var pattern-exps next-bodies next-case-body)))
 
-              (cases expression pattern-exp
-                (const-num-exp (n)
-                  (simple-match))
-
-                (const-bool-exp (b)
-                  (simple-match))
-
-                (unit-exp ()
-                  (simple-match))
-
-                ;; TODO: lists & Datatypes
-
-                (var-exp (var)
-                  (let-exp (list var) (list (any-type)) (list (var-exp pattern-var))
-                    next-body))
-                
-                (else (eopl:error "SOME ERRA")))))
-
-          (ending-argument (pattern-exp body)
-            (let ([simple-match (lambda ()
-                                  (if-exp
-                                    (call-exp
-                                      (call-exp (var-exp '==) (var-exp pattern-var))
-                                      pattern-exp)
-                                    body
-                                    (translate-some
-                                      pattern-var
-                                      pattern-var-n
-                                      (cdr fkin-grouped))))])
-              (cases expression pattern-exp
-                (const-num-exp (n)
-                  (simple-match))
-
-                (const-bool-exp (b)
-                  (simple-match))
-
-                (unit-exp ()
-                  (simple-match))
-
-                ;; TODO: lists & Datatypes
-
-                (var-exp (var)
-                  (let-exp (list var) (list (any-type)) (list (var-exp pattern-var))
-                    body))
-                
-                (else (eopl:error "SOME ERRA"))))))))))
+          (ending-argument (pattern-exps bodies)
+            (get-match-exp pattern-var pattern-exps bodies next-case-body)))))))
 
 (define get-same-and-rest-declarations
   (lambda (var declarations)
@@ -234,33 +199,25 @@
                 (group-declarations-by-var rest))))
           (else (eopl:error "THATS IMPOSSIBLE!")))))))
 
-(define split-declarations-to-args-bodies
-  (lambda (declarations)
-    (if (null? declarations) (cons '() '())
-      (let ([declaration (car declarations)])
-        (cases expression declaration
-          (declaration-exp (var arguments body)
-            (let* ([result (split-declarations-to-args-bodies (cdr declarations))]
-                   [args (car result)]
-                   [bodies (cdr result)])
-              (cons
-                (cons arguments args)
-                (cons body bodies))))
-          (else (eopl:error "THATS IMPOSSIBLE!")))))))
+(define declaration-exp->argsnbody
+  (lambda (declaration)
+    (cases expression declaration
+      (declaration-exp (var args body)
+        (cons args body))
+      (else (eopl:error "impossible!")))))
 
 (define translate-to-let-without-body
   (lambda (declarations)
     (let* ([declarations-grouped (group-declarations-by-var declarations)]
            [groups (map (lambda (group)
-                          (let ([var (car group)]
-                                [declarations (cdr group)]
-                                [args-bodies (split-declarations-to-args-bodies declarations)])
+                          (let* ([var (car group)]
+                                 [declarations (cdr group)]
+                                 [args-body-list (map declaration-exp->argsnbody declarations)])
                             (list
                               var
                               (any-type)
-                              (translate-some2 (car args-bodies) (cdr args-bodies)))))
+                              (translate-some2 args-body-list))))
                         declarations-grouped)]
-      ;;; groups)))
            [joined (join3 groups)])
       (no-body-let
         (list-ref joined 0)
@@ -268,16 +225,16 @@
         (list-ref joined 2)))))
 
 (define translate-some2
-  (lambda (arguments-list bodies)
-    (if (null? (car arguments-list))  ;; pusta lista argumentów
-      (car bodies)
+  (lambda (args-body-list)
+    (if (null? (caar args-body-list))  ;; pusta lista argumentów
+      (cdar args-body-list)
       (lambda-exp
         (get-pattern-var 0)
         (any-type)
         (translate-some
           (get-pattern-var 0)
           0
-          (group-it arguments-list bodies))))))
+          (group-it args-body-list))))))
 
 (define join3
   (lambda (lst)
