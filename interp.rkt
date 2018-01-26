@@ -88,6 +88,9 @@
                       (value-of/k exp1 env
                                   (common-op-cont1 op exp2 env cont)))
 
+      (missing-case-exp ()
+        (eopl:error "Missing declaration case!\n"))
+
       (else (eopl:error "Not implemented for ~s" exp))
       
       )))
@@ -285,3 +288,19 @@
       and x y = False;
       
       True `and` False")
+
+(run "sum [] = 0;
+      sum x:xs = x + (sum  xs);
+
+      sum [1, 2, 3]")
+
+(run "rev [] acc = acc;
+      rev x:xs acc = rev xs (x:acc);
+
+      head (rev [1, 2, 3, 4, 5] [])")
+
+(run "len [] = 0;
+      len x:(y:xs) = 2 + (len xs);
+      len x:xs = 1 + (len xs);
+
+      len [1, 2, 3, 4, 5, 6]")

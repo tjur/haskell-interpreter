@@ -128,7 +128,44 @@
           (unit-exp ()
             (simple-match))
 
+          (list-exp (xs)
+            (if (null? xs)
+              (if-exp
+                (call-exp (var-exp 'empty) (var-exp pattern-var))
+                then-body
+                (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body))
+
+              (eopl:error "get-match-exp list-exp not null..."))) ;; TODO
+
           ;; TODO: lists & Datatypes
+
+          (unpack-exp (var args)
+            (if (eq? var ':)
+              (let ([next-else-body (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)])
+                (if-exp
+                  (call-exp (var-exp 'empty) (var-exp pattern-var))
+                  next-else-body
+
+                  (let* ([head-arg (car args)]
+                        [tail-arg (cadr args)]
+                        [head-var (string->symbol (string-append (symbol->string pattern-var) "hd_"))]
+                        [tail-var (string->symbol (string-append (symbol->string pattern-var) "tl_"))])
+
+                    (let-exp
+                      (list head-var)
+                      (list (any-type))
+                      (list (call-exp (var-exp 'head) (var-exp pattern-var)))
+                      (get-match-exp head-var (list head-arg)
+                        
+                        (list
+                          (let-exp
+                            (list tail-var)
+                            (list (any-type))
+                            (list (call-exp (var-exp 'tail) (var-exp pattern-var)))
+                            (get-match-exp tail-var (list tail-arg) (list then-body) next-else-body)))
+                        next-else-body)))))
+
+              (eopl:error "get-match-exp unpack-exp not implemented")))
 
           (var-exp (var)
             (let-exp (list var) (list (any-type)) (list (var-exp pattern-var))
