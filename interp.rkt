@@ -348,4 +348,12 @@
 
              if 2 == 3 then Zero else One;
 
-             let (lst :: int-list) = [1+2, 4*5, 100 - 1] in ((head lst) : (tail lst))")
+             let (lst :: int-list) = [1+2, 4*5, 100 - 1] in ((head lst) : (tail lst));
+
+             let (take :: int-list) (lst :: int-list) (n :: int) =
+              if n == 0
+                 then []
+                 else ((head lst) : (take (tail lst) (n - 1)))
+             in let (lst :: int-list) (n :: int) = (n : (lst (n + 1)))
+              in let (nats :: int-list) = (lst 0)
+               in (take nats 50)")
