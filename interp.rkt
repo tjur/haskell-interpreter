@@ -31,14 +31,14 @@
 
                    (let* ([env (process-data-exps data-exps (init-env))]
                           [tenv (create-tenv (init-tenv) env)]
-                          [translated (translate-declarations exps)]
+                          [translated (translate-declarations expressions)]
                           [let-without-body (car translated)]
                           [others (cdr translated)]
                           [lets
                             (map (lambda (exp)
                                   (let-without-body->let-exp let-without-body exp))
                                   others)])
-                     (evaluate-expressions others tenv env)))))))
+                     (evaluate-expressions lets tenv env)))))))
 
 
 (define (create-tenv tenv env)
@@ -358,46 +358,46 @@
  "let (fact :: int) (n :: int) = if n == 0 then 1 else (n * (fact (n - 1))) in (fact 5)")
 |#
 
-(run "data Tree = Empty | Leaf int | Node Tree int Tree;
-             data Bin = Zero | One;
+;;; (run "data Tree = Empty | Leaf int | Node Tree int Tree;
+;;;              data Bin = Zero | One;
 
-             let (f :: Tree) (x :: Tree) = (Leaf y)
-                 (y :: int) = 26 + 1 in
-              (f (Node (Leaf 42) 27 (Node (Leaf 42) 27 (Leaf 1))));
+;;;              let (f :: Tree) (x :: Tree) = (Leaf y)
+;;;                  (y :: int) = 26 + 1 in
+;;;               (f (Node (Leaf 42) 27 (Node (Leaf 42) 27 (Leaf 1))));
 
-             if 2 == 3 then Zero else One;
+;;;              if 2 == 3 then Zero else One;
 
-             let (lst :: int-list) = [1+2, 4*5, 100 - 1] in ((head lst) : (tail lst));
+;;;              let (lst :: int-list) = [1+2, 4*5, 100 - 1] in ((head lst) : (tail lst));
 
-             let (take :: int-list) (lst :: int-list) (n :: int) =
-              if n == 0
-                 then []
-                 else ((head lst) : (take (tail lst) (n - 1)))
-             in let (lst :: int-list) (n :: int) = (n : (lst (n + 1)))
-              in let (nats :: int-list) = (lst 0)
-               in (take nats 50)")
+;;;              let (take :: int-list) (lst :: int-list) (n :: int) =
+;;;               if n == 0
+;;;                  then []
+;;;                  else ((head lst) : (take (tail lst) (n - 1)))
+;;;              in let (lst :: int-list) (n :: int) = (n : (lst (n + 1)))
+;;;               in let (nats :: int-list) = (lst 0)
+;;;                in (take nats 50)")
 
-(run "fact 0 = 1;
-      fact n = n * (fact (n - 1));
+(run "(fact :: int) (0 :: int) = 1;
+      (fact :: int) (n :: int) = n * (fact (n - 1));
       fact 5")
 
-(run "and True True = True;
-      and x y = False;
+;;; (run "(and :: bool) (True :: bool) (True :: bool) = True;
+;;;       (and :: bool) (x :: bool) (y :: bool) = False;
       
-      True `and` False")
+;;;       True `and` False")
 
-(run "sum [] = 0;
-      sum x:xs = x + (sum  xs);
+(run "(sum :: int) ([] :: int-list) = 0;
+      (sum :: int) (x:xs :: int-list) = x + (sum  xs);
 
-      sum [1, 2, 3]")
+      sum [1, 2, 3, 4]")
 
-(run "rev [] acc = acc;
-      rev x:xs acc = rev xs (x:acc);
+;;; (run "(rev :: int-list) ([] :: int-list) (acc :: int-list) = acc;
+;;;       (rev :: int-list) (x:xs :: int-list) (acc :: int-list) = rev xs (x:acc);
 
-      rev [5, 4, 3, 2, 1]")
+;;;       rev [5, 4, 3, 2, 1] []")
 
-(run "len [] = 0;
-      len x:(y:xs) = 2 + (len xs);
-      len x:xs = 1 + (len xs);
+(run "(len :: int) ([] :: int-list) = 0;
+      (len :: int) (x:(y:xs) :: int-list) = 2 + (len xs);
+      (len :: int) (x:xs :: int-list) = 1 + (len xs);
 
-      len [1, 2, 3, 4, 5 ,6]")
+      len [1, 2, 3, 4, 5, 10]")

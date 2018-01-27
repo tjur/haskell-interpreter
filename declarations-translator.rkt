@@ -1,6 +1,6 @@
 #lang eopl
 
-(require (only-in racket/base foldr filter))
+(require (only-in racket/base foldr filter build-list length))
 (require "datatypes.rkt")
 (require "parser.rkt")
 
@@ -10,14 +10,16 @@
   (no-body-let
    (p-names (list-of symbol?))
    (p-result-types (list-of type?))
+   (ps-vars (list-of (list-of symbol?)))
+   (ps-vars-types (list-of (list-of type?)))
    (exps (list-of expression?)))
   (empty))
 
 (define let-without-body->let-exp
   (lambda (lwb body)
     (cases let-without-body lwb
-      (no-body-let (p-names p-result-types exps)
-        (let-exp p-names p-result-types exps body))
+      (no-body-let (p-names p-result-types ps-vars ps-vars-types exps)
+        (let-exp p-names p-result-types ps-vars ps-vars-types exps body))
       (empty () body))))
 
 ;; translate-declarations : List(Exp) -> Let-without-body x List(Exp)
@@ -56,10 +58,10 @@
 
 (define-datatype argument argument?
   (an-argument
-    (pattern-exps (list-of expression?))
+    (pattern-exps (list-of (lambda (xs) (and (list? xs) (not (null? xs)) (expression? (car xs)) (type? (cadr xs))))))
     (arguments (list-of (list-of argument?))))
   (ending-argument
-    (pattern-exps (list-of expression?))
+    (pattern-exps (list-of (lambda (xs) (and (list? xs) (not (null? xs)) (expression? (car xs)) (type? (cadr xs))))))
     (bodies (list-of expression?))))
 
 (define var-exp?
@@ -70,10 +72,10 @@
 
 (define get-same-and-rest
   (lambda (args args-bodies)
-    (let* ([matching-lambda (lambda (arg-body) (matching-arguments? (car args) (caar arg-body)))]
+    (let* ([matching-lambda (lambda (arg-body) (matching-arguments? (caar args) (caaar arg-body)))]
            [matched (filter matching-lambda args-bodies)]
            [not-matched (filter (lambda (x) (not (matching-lambda x))) args-bodies)]
-           [vars-pattern-lambda (lambda (arg-body) (var-exp? (caar arg-body)))]
+           [vars-pattern-lambda (lambda (arg-body) (var-exp? (caaar arg-body)))]
            [matched-var-patterns (filter vars-pattern-lambda matched)])
       (list
         matched
@@ -98,7 +100,7 @@
               (map caaar matches)
               (map (lambda (arg-body-list)
                     (group-arguments (map (lambda (arg-body)
-                                    (cons (cdar arg-body) (cdr arg-body))) arg-body-list))) matches)))
+                                            (cons (cdar arg-body) (cdr arg-body))) arg-body-list))) matches)))
 
           (group-arguments not-matched))))))
                 
@@ -109,7 +111,8 @@
 (define get-match-exp
   (lambda (pattern-var pattern-exps then-bodies else-body)
     (if (null? pattern-exps) else-body
-      (let* ([pattern-exp (car pattern-exps)]
+      (let* ([pattern-exp (caar pattern-exps)]
+             [pattern-type (cadar pattern-exps)]
              [then-body (car then-bodies)]
              [simple-match (lambda ()
                             (if-exp
@@ -137,7 +140,25 @@
 
               (eopl:error "get-match-exp list-exp not null..."))) ;; TODO
 
-          ;; TODO: lists & Datatypes
+            ;;; $0
+            ;;; x:xs
+            ;;; unpack ': ((var-exp x) (var-exp xs))
+
+            ;;; $0
+            ;;; (Node l x r)
+            ;;; unpack 'Node (l x r) 
+
+            ;;; (if-exp
+            ;;;   (sprawdzmidatatype-exp (var-exp $0) 'Node)
+
+            ;;;   (sprawdzmidatatype-exp exp1 valconstr
+            ;;;     (== (wyjąc konstruktor (valueof exp1)) 'Node)
+
+            ;;;   (wyjmijmi-exp exp i
+            ;;;     (
+
+              ;;; sprawdzmidatatype-exp :: expression * symbol -> bool-val
+              ;;; wyjmijmi-exp :: expression * int -> expval/thunk
 
           (unpack-exp (var args)
             (if (eq? var ':)
@@ -153,22 +174,33 @@
 
                     (let-exp
                       (list head-var)
-                      (list (any-type))
+                      ;;; (list (any-type))
+                      (list (int-type))
+                      (list '())
+                      (list '())
                       (list (call-exp (var-exp 'head) (var-exp pattern-var)))
-                      (get-match-exp head-var (list head-arg)
+                      (get-match-exp head-var (list (list head-arg (int-type)))
                         
                         (list
                           (let-exp
                             (list tail-var)
-                            (list (any-type))
+                            ;;; (list (any-type))
+                            (list (int-list-type))
+                            (list '())
+                            (list '())
                             (list (call-exp (var-exp 'tail) (var-exp pattern-var)))
-                            (get-match-exp tail-var (list tail-arg) (list then-body) next-else-body)))
+                            (get-match-exp tail-var (list (list tail-arg (int-list-type))) (list then-body) next-else-body)))
                         next-else-body)))))
 
               (eopl:error "get-match-exp unpack-exp not implemented")))
 
           (var-exp (var)
-            (let-exp (list var) (list (any-type)) (list (var-exp pattern-var))
+            (let-exp
+              (list var)
+              (list pattern-type)
+              (list '())
+              (list '())
+              (list (var-exp pattern-var))
               then-body))
 
           (else (eopl:error "impossible!")))))))
@@ -184,7 +216,7 @@
             (let* ([next-bodies (map (lambda (grouped-args)
                                       (lambda-exp
                                         next-pattern-var
-                                        (any-type)
+                                        (any-type) ;; TODO
                                         (translate-to-lambdas
                                           next-pattern-var
                                           (+ pattern-var-n 1)
@@ -197,7 +229,7 @@
 (define declaration-exp->var
   (lambda (declaration)
     (cases expression declaration
-      (declaration-exp (var args body) var)
+      (declaration-exp (var-type args body) (car var-type))
       (else (eopl:error "impossible!")))))
 
 (define get-same-and-rest-declarations
@@ -212,12 +244,12 @@
     (if (null? declarations) '()
       (let ([declaration (car declarations)])
         (cases expression declaration
-          (declaration-exp (var arguments body)
-            (let* ([result (get-same-and-rest-declarations var declarations)]
+          (declaration-exp (var-type arguments body)
+            (let* ([result (get-same-and-rest-declarations (car var-type) declarations)]
                    [same (car result)]
                    [rest (cdr result)])
               (cons
-                (cons var same)
+                (cons var-type same)
                 (group-declarations-by-var rest))))
           (else (eopl:error "THATS IMPOSSIBLE!")))))))
 
@@ -232,19 +264,23 @@
   (lambda (declarations)
     (let* ([declarations-grouped (group-declarations-by-var declarations)]
            [groups (map (lambda (group)
-                          (let* ([var (car group)]
+                          (let* ([var-type (car group)]
                                  [declarations (cdr group)]
                                  [args-body-list (map declaration-exp->argsnbody declarations)])
                             (list
-                              var
-                              (any-type)
+                              (car var-type)
+                              (cadr var-type)
+                              (build-list (length (caar args-body-list)) get-pattern-var)
+                              (map cadr (caar args-body-list))
                               (start-translations args-body-list))))
                         declarations-grouped)]
-           [joined (join3 groups)])
+           [joined (join5 groups)])
       (no-body-let
         (list-ref joined 0)
         (list-ref joined 1)
-        (list-ref joined 2)))))
+        (list-ref joined 2)
+        (list-ref joined 3)
+        (list-ref joined 4)))))
 
 (define start-translations
   (lambda (args-body-list)
@@ -252,18 +288,21 @@
       (cdar args-body-list)
       (lambda-exp
         (get-pattern-var 0)
-        (any-type)
+        ;;; (cdaaar args-body-list)
+        (int-type) ;; TODO
         (translate-to-lambdas
           (get-pattern-var 0)
           0
           (group-arguments args-body-list))))))
 
-(define join3
+(define join5
   (lambda (lst)
-    (if (null? lst) (list '() '() '())
-      (let* ([result (join3 (cdr lst))]
+    (if (null? lst) (list '() '() '() '() '())
+      (let* ([result (join5 (cdr lst))]
              [hd (car lst)])
         (list
           (cons (list-ref hd 0) (list-ref result 0))
           (cons (list-ref hd 1) (list-ref result 1))
-          (cons (list-ref hd 2) (list-ref result 2)))))))
+          (cons (list-ref hd 2) (list-ref result 2))
+          (cons (list-ref hd 3) (list-ref result 3))
+          (cons (list-ref hd 4) (list-ref result 4)))))))

@@ -8,9 +8,9 @@
 
 (provide type-of-exp type-of type-to-external-form init-tenv extend-tenv)
 
-(define is-any-type?
-  (lambda (type)
-    (cases type-val type
+(define any-type?
+  (lambda (ty)
+    (cases type ty
       (any-type () #t)
       (else #f))))
 
@@ -18,7 +18,7 @@
 (define check-equal-type!
   (lambda (ty1 ty2 exp)
     (when (and
-            (and (not (is-any-type? ty1)) (not (is-any-type? ty2)))
+            (and (not (any-type? ty1)) (not (any-type? ty2)))
             (not (equal? ty1 ty2)))
       (report-unequal-types ty1 ty2 exp))))
 

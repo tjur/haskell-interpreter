@@ -21,7 +21,7 @@
   (lambda (val ty i)
     (string-append
       (format "Expression ~s\n" i)
-      (format "~s :: ~s\n\n" (pretty-print-expval val) (type-to-external-form ty)))))
+      (string-append (pretty-print-expval val) " :: " (symbol->string (type-to-external-form ty)) "\n\n"))))
 
 (define pretty-print-program
   (lambda (prog)
@@ -92,7 +92,7 @@
                             (string-append
                               (string-join (map symbol->string (cons var args)) " ") " = " ((pretty-exp indents_2) exp)))))
               (string-append
-                "let " (string-join (map one-let p-names exps) (string-append "\n" (indent indents_1))) "\n"
+                "let " (string-join (map one-let p-names ps-vars exps) (string-append "\n" (indent indents_1))) "\n"
                 (indent indents) "in " ((pretty-exp indents_1) body))))
 
           (cons-exp (head tail)

@@ -27,7 +27,7 @@
    (if-exp3 expression?))
   (lambda-exp
    (var symbol?)
-   (type type?)
+   (var-type type?)
    (body expression?))
   (call-exp
    (rator expression?)
@@ -46,8 +46,8 @@
    (val-constr symbol?)
    (values (list-of expression?)))
   (declaration-exp
-   (var symbol?)
-   (arguments (list-of expression?))
+   (var (lambda (xs) (and (list? xs) (not (null? xs)) (symbol? (car xs)) (type? (cadr xs)))))
+   (arguments (list-of (lambda (xs) (and (list? xs) (not (null? xs)) (expression? (car xs)) (type? (cadr xs))))))
    (body expression?))
   (number-op-exp
    (op symbol?)
@@ -79,6 +79,7 @@
 ;;;;;;;;;;;;;;;; types ;;;;;;;;;;;;;;;;
 
 (define-datatype type type?
+  (any-type)
   (int-type)
   (bool-type)
   (unit-type)

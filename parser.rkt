@@ -183,8 +183,8 @@
     
 
     ;; global declarations
-    [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]
-                       [(OPENB <operator> CLOSEB <arguments> EQUALS <expression>) (declaration-exp $2 $4 $6)]]
+    [<declaration-exp> [(<identifier-with-type> <arguments-with-type> EQUALS <expression>) (declaration-exp $1 $2 $4)]
+                       [(OPENB <operator> CLOSEB <arguments-with-type> EQUALS <expression>) (declaration-exp $2 $4 $6)]]
 
     [<argument> [(<value-exp>) $1]
                 [(<argument> COLON <argument>) (unpack-exp ': (list $1 $3))]
@@ -192,8 +192,13 @@
                 [(<var-exp>) $1]
                 [(OPENB <argument> CLOSEB) $2]]
 
-    [<arguments>  [() '()]
-                  [(<argument> <arguments>) (cons $1 $2)]]
+    [<arguments> [() '()]
+                 [(<argument> <arguments>) (cons $1 $2)]]
+
+    [<arguments-with-type>  [() '()]
+                [(<argument-with-type> <arguments-with-type>) (cons $1 $2)]]
+
+    [<argument-with-type> [(OPENB <argument> DOUBLECOLON <type> CLOSEB) (list $2 $4)]]
 
     )))
 
