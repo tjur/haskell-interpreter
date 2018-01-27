@@ -7,6 +7,7 @@
 
 (require "datatypes.rkt")
 (require "pretty-printer.rkt")
+(require "data-expression.rkt")
 
 (provide scan&parse cons3 create-let-exp)
 
@@ -22,7 +23,7 @@
 
 (define-empty-tokens empty-tokens (
                                    <unit>
-                                   <int-type> <bool-type> <unit-type> <list-type> <any-type>
+                                   <int-type> <bool-type> <unit-type> <int-list-type>
                                    COLON DOUBLECOLON SEMICOLON COMMA GRAVE
                                    OPENB CLOSEB OPENSB CLOSESB
                                    IF THEN ELSE
@@ -59,8 +60,7 @@
    ["int" (token-<int-type>)]
    ["bool" (token-<bool-type>)]
    ["unit" (token-<unit-type>)]
-   ["list" (token-<list-type>)]
-   ["any" (token-<any-type>)]
+   ["int-list" (token-<int-list-type>)]
    ["if" (token-IF)]
    ["then" (token-THEN)]
    ["else" (token-ELSE)]
@@ -90,16 +90,17 @@
     [<identifiers-with-types>  [() '()]
                     [(<identifier-with-type> <identifiers-with-types>) (cons $1 $2)]]
 
-    [<identifier-with-type> [(OPENB <identifier> DOUBLECOLON <type> CLOSEB) (list $2 $4)]]
+    [<identifier-with-type> [(OPENB <big-letter-name> DOUBLECOLON <type> CLOSEB) (list $2 $4)]
+                            [(OPENB <identifier> DOUBLECOLON <type> CLOSEB) (list $2 $4)]]
 
     ;; types
     [<type> [(<int-type>) (int-type)]
             [(<bool-type>) (bool-type)]
             [(<unit-type>) (unit-type)]
-            [(<list-type>) (list-type)]
-            [(<any-type>) (any-type)]
+            [(<int-list-type>) (int-list-type)]
             [(<type> ARROW <type>) (proc-type $1 $3)]
-            [(<big-letter-name> <types>) (data-type $1 $2)]]
+            [(<big-letter-name>) (create-data-exp-type $1)]
+            [(<identifier>) (create-data-exp-type $1)]]
 
     [<types> [() '()]
              [(<type> <types>) (cons $1 $2)]]
@@ -129,6 +130,7 @@
 
     ;; single variable
     [<var-exp> [(<identifier>) (var-exp $1)]
+               [(<big-letter-name>) (var-exp $1)]
                [(OPENB <operator> CLOSEB) (var-exp $2)]]
 
     ;; if
@@ -164,13 +166,21 @@
     [<infix-op-exp> [(<expression> COLON <expression>) (cons-exp $1 $3)]
                     [(<expression> <operator> <expression>) (call-exp (call-exp (var-exp $2) $1) $3)]]
 
-    ;; algebraic data types (without polymorphism)
-    [<data-exp> [(DATA <big-letter-name> EQUALS <val-constructor> <val-constructors>) (data-exp $2 (cons $4 $5))]]
+    ;; data expression - algebraic data types (without polymorphism)
+    [<data-exp> [(DATA <big-letter-name> EQUALS <val-constructor> <val-constructors>) (a-data-exp (data-exp-type $2) (cons $4 $5))]]
 
-    [<val-constructor> [(<big-letter-name> <types>) (val-constr $1 $2)]]
+    [<val-constructor> [(<big-letter-name> <types-or-identifiers>) (a-val-constr $1 $2)]]
 
     [<val-constructors> [() '()]
                         [(BAR <val-constructor> <val-constructors>) (cons $2 $3)]]
+
+    [<types-or-identifiers> [() '()]
+                            [(<type-or-identifier> <types-or-identifiers>) (cons $1 $2)]]
+
+    [<type-or-identifier> [(<type>) $1]
+                          [(<big-letter-name>) (data-exp-type $1)]
+                          [(<identifier>) (data-exp-type $1)]]
+    
 
     ;; global declarations
     [<declaration-exp> [(<identifier> <arguments> EQUALS <expression>) (declaration-exp $1 $2 $4)]
@@ -215,14 +225,27 @@
     (let* [(p-names-with-result-types (list-ref let-defs 0))
            (p-names (map (lambda (x) (list-ref x 0)) p-names-with-result-types))
            (p-result-types (map (lambda (x) (list-ref x 1)) p-names-with-result-types))
-          (b-vars-with-types (list-ref let-defs 1))
-          (p-bodies (list-ref let-defs 2))
-          (new-p-bodies (map to-one-arg-proc b-vars-with-types p-bodies))]
+           (ps-vars-with-types (list-ref let-defs 1))
+           (ps-vars (map (lambda (x)
+                           (map (lambda (b-var-with-type)(list-ref b-var-with-type 0)) x)) ps-vars-with-types))
+           (ps-vars-types (map (lambda (x)
+                                 (map (lambda (b-var-with-type)(list-ref b-var-with-type 1)) x)) ps-vars-with-types))
+           (p-bodies (list-ref let-defs 2))
+           (new-p-bodies (map to-one-arg-proc ps-vars-with-types p-bodies))]
     (let-exp
      p-names
      p-result-types
+     ps-vars
+     ps-vars-types
      new-p-bodies
      let-body))))
+
+(define create-data-exp-type
+  (lambda (type-name)
+    (let ([new-type (data-exp-type type-name)])
+    (begin
+      (add-type-to-check-list! new-type) ;; we will check if the type is real type later
+      new-type))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

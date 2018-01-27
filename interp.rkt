@@ -8,26 +8,80 @@
 (require "basic-procedures.rkt")
 (require "type-checker.rkt")
 (require "declarations-translator.rkt")
+(require "data-expression.rkt")
+(require (only-in racket/base
+                  filter))
+(require (only-in racket/string
+                  string-join))
 
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
 
-;; value-of-program : Program -> FinalAnswer
-(define values-of-program 
+;; run-program : Program -> ()
+(define run-program 
   (lambda (pgm)
     (initialize-store!)
     (init-basic-procedures)
     (cases program pgm
-      (a-program (exps)
-                 (let* ([result (translate-declarations exps)]
-                        [let-without-body (car result)]
-                        [others (cdr result)])
-                  (map (lambda (exp)
-                        (value-of/k
-                          (let-without-body->let-exp let-without-body exp)
-                          (init-env)
-                          (end-cont)))
-                    others))))))
+      (a-program (global-exps)
+                 (let ([expressions
+                        (filter (lambda (global-exp) (expression? global-exp)) global-exps)]
+                       [data-exps
+                        (filter (lambda (global-exp) (data-exp? global-exp)) global-exps)])
+
+                   (let* ([env (process-data-exps data-exps (init-env))]
+                          [tenv (create-tenv (init-tenv) env)]
+                          [translated (translate-declarations exps)]
+                          [let-without-body (car translated)]
+                          [others (cdr translated)]
+                          [lets
+                            (map (lambda (exp)
+                                  (let-without-body->let-exp let-without-body exp))
+                                  others)])
+                     (evaluate-expressions others tenv env)))))))
+
+
+(define (create-tenv tenv env)
+  (define create-tenv-aux
+    (lambda (tenv env)
+      (cases environment env
+        (empty-env () tenv)
+        (extend-env (val-constr-name ref saved-env)
+                    (let* ([exp
+                            (cases thunk (deref ref)
+                              (a-thunk (exp _) exp))]
+                           [val-constr-type (type-of-exp exp)])
+                      (create-tenv-aux
+                       (extend-tenv val-constr-name val-constr-type tenv)
+                       saved-env)))
+        (else (eopl:error 'create-tenv "Expected empty-env or extend-env but found: ~s" env)))))
+  
+  (create-tenv-aux tenv env))
+
+
+(define (evaluate-expressions exps tenv env)
+  (define eval-exp-aux
+    (lambda (exps i)
+      (if (null? exps)
+          (display "No expression to evaluate!\n")
+          (let* ([exp (car exps)]
+                 [ty (type-of (car exps) tenv)]
+                 [val (value-of/k (car exps) env (end-cont))])
+            (begin
+              (display (pretty-print-exp-result val ty i))
+              (if (null? (cdr exps)) ;; last expression
+                  42
+                  (eval-exp-aux (cdr exps) (+ i 1))))))))
+
+  (eval-exp-aux exps 1))
+
+
+(define pretty-print-val-constr
+  (lambda (val)
+    (cases val-constr-exp val
+      (a-val-constr (name types)
+        (string-join (map symbol->string (cons name types)) " ")))))
+
 
 ;; value-of/k : Exp * Env * Cont -> FinalAnswer
 (define value-of/k
@@ -52,6 +106,10 @@
       (list-exp (exps)
                 (value-of-list/k exps env cont))
 
+      (type-value-exp (id val-constr-name b-vars ty)
+                      (let ([values (map (lambda (var) (apply-env env var)) b-vars)])
+                        (apply-cont cont (data-exp-val val-constr-name values ty))))
+
       (cons-exp (exp1 exp2)
                 (apply-cont cont
                   (list-val
@@ -63,7 +121,7 @@
                 (apply-cont cont 
                             (proc-val (procedure vars body env))))
       
-      (let-exp (p-names p-result-types p-bodies let-body)
+      (let-exp (p-names p-result-types ps-vars ps-vars-types p-bodies let-body)
                   (value-of/k let-body
                               (make-extend-env-rec p-names p-bodies env)
                               cont))
@@ -100,7 +158,18 @@
 (define apply-cont
   (lambda (cont val)
     (cases continuation cont
-      (end-cont () val)
+      (end-cont ()
+                (cases expval val
+                  (list-val (refs)
+                            (begin
+                                  (map eval-thunk-in-ref refs) ;; refs values are changed
+                                  val))
+                  (data-exp-val (val-constr-name refs type)
+                                (begin
+                                  (map eval-thunk-in-ref refs) ;; refs values are changed
+                                  val))
+                  (else val)))
+                               
       
       (if-cont (exp2 exp3 saved-env saved-cont)
                     (if (expval->bool val)
@@ -191,15 +260,17 @@
                (value-of/k exp1 saved-env cont)))))
 
 
+;; eval-thunk-in-ref : Ref -> Expval (evaluates thunk in ref)
+(define eval-thunk-in-ref
+  (lambda (ref)
+    (let ((w (deref ref)))
+      (if (expval? w)
+          (apply-cont (end-cont) w)
+          (value-of-thunk/k w (thunk-cont ref (end-cont)))))))
 
 (define run
   (lambda (string)
-    (map (lambda (val)
-          (display 
-            (pretty-print-expval val))
-          (newline))
-      (values-of-program (scan&parse string)))
-    (newline)))
+    (run-program (scan&parse string))))
 
 (define type-of-program
     (lambda (pgm)
@@ -255,30 +326,56 @@
         (head `o` tail `o` tail [1, 2, 3])")
 |#
 
-;;; (run "\\ (x :: int) -> (x + 1) 5")
 
-;;; (run "let (f :: int) (x :: int) (y :: int) = x + y in (f 1 9)")
+#|
+(run "\\ (x :: int) -> (x + 1) 5")
 
-;;; (run "let (f :: bool) (x :: unit) = 100 (g :: int) (x :: int) (y :: int) = x - y in (g 43 1)")
+(run-type "42")
+(run-type "True")
+(run-type "\\(x :: int) -> (x + 1)")
+;;; (run-type "if True then 2 else False")
+(run-type "\\ (xs :: list) (ys :: list) -> ((head xs) + (head ys))")
 
-;;; (run-type "42")
-;;; (run-type "True")
-;;; (run-type "\\(x :: int) -> (x + 1)")
-;;; ;;; (run-type "if True then 2 else False")
-;;; (run-type "\\ (xs :: list) (ys :: list) -> ((head xs) + (head ys))")
+(run-type "let (f :: int) (x :: unit) = 100 (g :: int) (x :: int) (y :: int) (z :: list) = x - y in (g 43 1 [])")
 
-;;; (run "(.) f g = \\ (x :: any) -> (f (g x));
+(run-type
+ "let (f :: int) (x :: int) (y :: unit) (z :: bool) (lst :: list) = 42 in f")
 
-;;;       (++) xs ys = if empty xs
-;;;                    then ys
-;;;                    else ((head xs):(tail xs ++ ys));
+(run-type
+ "let (even :: bool) (x :: int) = if x == 0 then True else (odd (x - 1))
+      (odd :: bool) (x :: int) = if x == 0 then False else (even(x - 1))
+      in (even 42)")
 
-;;;       fact x = if x == 0
-;;;                then 1
-;;;                else (x * (fact (x - 1)));
+(run
+ "let (even :: bool) (x :: int) = if x == 0 then True else (odd (x - 1))
+      (odd :: bool) (x :: int) = if x == 0 then False else (even(x - 1))
+      in (even 42)")
 
-;;;       head . tail . tail ([1] ++ [2, 3]);
-;;;       fact 5")
+(run-type
+ "let (fact :: int) (n :: int) = if n == 0 then 1 else (n * (fact (n - 1))) in (fact 5)")
+
+(run
+ "let (fact :: int) (n :: int) = if n == 0 then 1 else (n * (fact (n - 1))) in (fact 5)")
+|#
+
+(run "data Tree = Empty | Leaf int | Node Tree int Tree;
+             data Bin = Zero | One;
+
+             let (f :: Tree) (x :: Tree) = (Leaf y)
+                 (y :: int) = 26 + 1 in
+              (f (Node (Leaf 42) 27 (Node (Leaf 42) 27 (Leaf 1))));
+
+             if 2 == 3 then Zero else One;
+
+             let (lst :: int-list) = [1+2, 4*5, 100 - 1] in ((head lst) : (tail lst));
+
+             let (take :: int-list) (lst :: int-list) (n :: int) =
+              if n == 0
+                 then []
+                 else ((head lst) : (take (tail lst) (n - 1)))
+             in let (lst :: int-list) (n :: int) = (n : (lst (n + 1)))
+              in let (nats :: int-list) = (lst 0)
+               in (take nats 50)")
 
 (run "fact 0 = 1;
       fact n = n * (fact (n - 1));
@@ -297,10 +394,10 @@
 (run "rev [] acc = acc;
       rev x:xs acc = rev xs (x:acc);
 
-      head (rev [1, 2, 3, 4, 5] [])")
+      rev [5, 4, 3, 2, 1]")
 
 (run "len [] = 0;
       len x:(y:xs) = 2 + (len xs);
       len x:xs = 1 + (len xs);
 
-      len [1, 2, 3, 4, 5, 6]")
+      len [1, 2, 3, 4, 5 ,6]")

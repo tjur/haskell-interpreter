@@ -2,17 +2,26 @@
 
 (require (only-in racket/string
                   string-join))
+(require (only-in racket/base
+                  format))
 
 (require "datatypes.rkt")
-(require "store.rkt") ;; wyświetlanie elementów listy
+(require "store.rkt") ;; for displaying elements of a list
 
-(provide pretty-print-program pretty-print-exp pretty-print-expval)
+
+(provide pretty-print-program pretty-print-exp pretty-print-expval pretty-print-exp-result)
 
 (define indent
   (lambda (n)
     (if (eq? n 0)
       ""
       (string-append "    " (indent (- n 1))))))
+
+(define pretty-print-exp-result
+  (lambda (val ty i)
+    (string-append
+      (format "Expression ~s\n" i)
+      (format "~s :: ~s\n\n" (pretty-print-expval val) (type-to-external-form ty)))))
 
 (define pretty-print-program
   (lambda (prog)
@@ -22,6 +31,13 @@
           (map pretty-print-exp exps)
           "\n"
           #:after-last "\n")))))
+
+(define pretty-print-data-exp
+  (lambda (exp)
+    (cases data-exp exp
+      (a-data-exp (type vals)
+                  (string-append
+                   "data " (symbol->string type) " = " (string-join (map pretty-print-val-constr vals) " | "))))))
 
 (define pretty-print-exp
   (lambda (exp)
@@ -54,6 +70,9 @@
               #:before-first "["
               #:after-last "]"))
 
+          (type-value-exp (id val-constr-name b-vars ty)
+                          "Not implemented yet!") ;; TODO
+
           (if-exp (exp1 exp2 exp3)
             (string-append
               "if " ((pretty-exp indents_1) exp1) "\n"
@@ -68,7 +87,7 @@
             (string-append
               "(" ((pretty-exp indents) rator) ((pretty-exp indents) rand) ")"))
 
-          (let-exp (p-names p-result-types exps body)
+          (let-exp (p-names p-result-types ps-vars ps-vars-types exps body)
             (let ((one-let (lambda (var args exp)
                             (string-append
                               (string-join (map symbol->string (cons var args)) " ") " = " ((pretty-exp indents_2) exp)))))
@@ -79,10 +98,6 @@
           (cons-exp (head tail)
             (string-append
               "(" ((pretty-exp indents) head) ":" ((pretty-exp indents) tail) ")"))
-
-          (data-exp (type vals)
-            (string-append
-              "data " (symbol->string type) " = " (string-join (map pretty-print-val-constr vals) " | ")))
 
           (unpack-exp (val-constr values)
             (string-append
@@ -113,7 +128,7 @@
 (define pretty-print-val-constr
   (lambda (val)
     (cases val-constr-exp val
-      (val-constr (name types)
+      (a-val-constr (name types)
         (string-join (map symbol->string (cons name types)) " ")))))
 
 (define pretty-print-expval
@@ -129,18 +144,54 @@
 
       (unit-val () "()")
 
-      ;;; (list-val (items)
-      ;;;   (string-join
-      ;;;     (map pretty-print-expval items)
-      ;;;     ", "
-      ;;;     #:before-first "["
-      ;;;     #:after-last "]"))
-
-      (list-val (_) "[...]")
+      (list-val (refs)
+                (string-join
+                 (map pretty-print-expval (flatten-list-of-refs-and-deref refs))
+                 ", "
+                 #:before-first "["
+                 #:after-last "]"))
 
       ;; TODO: wypisywanie enva!
       (proc-val (p)
         (cases proc p
           (procedure (bvar body env)
             (string-append
-              "\\" (symbol->string bvar) " -> " ((pretty-exp 1) body))))))))
+              "\\" (symbol->string bvar) " -> " ((pretty-exp 1) body)))))
+
+      (data-exp-val (val-constr-name refs type)
+                    (if (null? refs)
+                        (symbol->string val-constr-name)
+                        (string-append
+                         (symbol->string val-constr-name) " ("
+                         (string-join (map (lambda (ref) (pretty-print-expval (deref ref))) refs) " ") ")")))
+
+      )))
+
+
+(define flatten-list-of-refs-and-deref
+  (lambda (refs)
+    (if (null? refs)
+        '()
+        (let ([val (deref (car refs))]
+              [vals (flatten-list-of-refs-and-deref (expval->list (deref (cadr refs))))])
+          (cons val vals)))))
+
+
+;; type-to-external-form : Type -> List | Sym
+(define type-to-external-form
+  (lambda (ty)
+    (cases type ty
+      (int-type () 'int)
+      (bool-type () 'bool)
+      (unit-type () '())
+      (int-list-type () 'int-list)
+      (proc-type (arg-type result-type)
+                 (list
+                  (type-to-external-form arg-type)
+                  '->
+                  (type-to-external-form result-type)))
+      (data-exp-type (name) name)
+      
+      (else (eopl:error 'type-to-external-form "Not implemented for type: ~s" ty))
+      
+      )))

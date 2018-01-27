@@ -33,20 +33,12 @@
                   (if (eqv? search-sym bvar)
                       bval
                       (apply-env saved-env search-sym)))
-      (extend-env-rec* (p-names b-vars p-bodies saved-env)
+      (extend-env-rec* (p-names p-bodies saved-env)
                        (cond 
                          ((location search-sym p-names)
                           => (lambda (n)
-                               (let [(vars (list-ref b-vars n))
-                                     (body (list-ref p-bodies n))]
-                                 (if (null? vars) ;; empty vars means this is some variable not a function
-                                     body ;; body is here a reference created earlier
-                                     (newref
-                                      (proc-val
-                                       (procedure 
-                                        vars
-                                        body
-                                        env)))))))
+                               (let [(body (list-ref p-bodies n))]
+                                 body))) ;; body is here a reference created earlier                                    
                          (else (apply-env saved-env search-sym)))))))
 
 ;; location : Sym * Listof(Sym) -> Maybe(Int)
@@ -66,18 +58,17 @@
 (define (make-extend-env-rec p-names p-bodies env)
   
   (define create-newrefs-for-vars-and-extend-env-rec
-    (lambda (p-names b-vars p-bodies p-names-acc b-vars-acc p-bodies-acc var-refs)
+    (lambda (p-names p-bodies p-names-acc p-bodies-acc var-refs)
       (if (null? p-names)
-          (list (extend-env-rec* (reverse p-names-acc) (reverse b-vars-acc) (reverse p-bodies-acc) env) var-refs)
-          (if (null? (car b-vars)) ;; empty (car b-vars) means it is a variable not a function
-              (let* [(exp1 (car p-bodies))
-                     (ref (newref (a-thunk exp1 (empty-env))))] ;; temporary env - we have to change it later
-                (create-newrefs-for-vars-and-extend-env-rec
-                 (cdr p-names) (cdr b-vars) (cdr p-bodies)
-                 (cons (car p-names) p-names-acc) (cons '() b-vars-acc) (cons ref p-bodies-acc) (cons ref var-refs)))
-              (create-newrefs-for-vars-and-extend-env-rec
-               (cdr p-names) (cdr b-vars) (cdr p-bodies)
-               (cons (car p-names) p-names-acc) (cons (car b-vars) b-vars-acc) (cons (car p-bodies) p-bodies-acc) var-refs)))))
+          (list (extend-env-rec* (reverse p-names-acc) (reverse p-bodies-acc) env) var-refs)
+          (let* [(exp1 (car p-bodies))
+                 (ref (newref (a-thunk exp1 (empty-env))))] ;; temporary env - we have to change it later
+            (create-newrefs-for-vars-and-extend-env-rec
+             (cdr p-names) (cdr p-bodies)
+             (cons (car p-names) p-names-acc) (cons ref p-bodies-acc) (cons ref var-refs))))))
+              ;; (create-newrefs-for-vars-and-extend-env-rec
+               ;; (cdr p-names) (cdr p-bodies)
+               ;; (cons (car p-names) p-names-acc) (cons (car p-bodies) p-bodies-acc) var-refs)))))
 
   (define update-var-refs-with-new-env
     (lambda (var-refs new-env)
@@ -92,7 +83,7 @@
                          (update-var-refs-with-new-env (cdr var-refs) new-env))))))))
 
   (let* [(result (create-newrefs-for-vars-and-extend-env-rec
-                  p-names (map (lambda (_) '()) p-names) p-bodies '() '() '() '())) ;; ten map to tymczasowe rozwiązanie, trzeba wyrzucić całkowice bvars
+                  p-names p-bodies '() '() '()))
          (new-env (list-ref result 0))
          (var-refs (list-ref result 1))]
     (update-var-refs-with-new-env var-refs new-env)))
