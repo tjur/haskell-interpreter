@@ -9,11 +9,11 @@
 (require "type-checker.rkt")
 (require "data-expression.rkt")
 (require (only-in racket/base
-                  filter))
+                  filter void))
 (require (only-in racket/string
                   string-join))
 
-(provide run-test)
+(provide run run-test)
 
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
@@ -71,7 +71,7 @@
             (begin
               (display (pretty-print-exp-result val ty i))
               (if (null? (cdr exps)) ;; last expression
-                  42
+                  (void)
                   (eval-exp-aux (cdr exps) (+ i 1))))))))
 
   (eval-exp-aux exps 1))
@@ -410,3 +410,4 @@
                  else ((head lst) : (take (tail lst) (n - 1)))
  
       in (Pair (take primes 5) (take primes 5))")
+
