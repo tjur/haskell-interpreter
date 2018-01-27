@@ -122,6 +122,12 @@
 
           (missing-case-exp () "")
 
+          (check-data-exp-val-exp (exp1 val-constr-name)
+                              (string-append (symbol->string val-constr-name) "? "(pretty-exp exp1)))
+
+          (extract-from-data-exp-val-exp (exp1 index)
+                                     (string-append "(" (pretty-exp exp1) ")[" (number->string index) "]"))
+
           )))))
 
 
