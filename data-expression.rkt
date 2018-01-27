@@ -7,7 +7,7 @@
 (require (only-in racket/base
                   foldl reverse remove*))
 
-(provide process-data-exps add-type-to-check-list!)
+(provide process-data-exps add-type-to-check-list! initialize-types-to-check-list!)
 
 
 (define type-value-id 'uninitialized)
@@ -16,7 +16,11 @@
   (lambda ()
     (set! type-value-id 0)))
 
-(define types-to-check-if-exist '())
+(define types-to-check-if-exist 'uninitialized)
+
+(define initialize-types-to-check-list!
+  (lambda ()
+    (set! types-to-check-if-exist '())))
 
 (define add-type-to-check-list!
   (lambda (ty)

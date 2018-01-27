@@ -13,8 +13,17 @@
 (require (only-in racket/string
                   string-join))
 
+(provide run-test)
+
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
+
+;; run : string -> ()
+(define run
+  (lambda (string)
+    (begin
+      (initialize-types-to-check-list!)
+      (run-program (scan&parse string)))))
 
 ;; run-program : Program -> ()
 (define run-program 
@@ -57,8 +66,8 @@
       (if (null? exps)
           (display "No expression to evaluate!\n")
           (let* ([exp (car exps)]
-                 [ty (type-of (car exps) tenv)]
-                 [val (value-of/k (car exps) env (end-cont))])
+                 [ty (type-of exp tenv)]
+                 [val (value-of/k exp env (end-cont))])
             (begin
               (display (pretty-print-exp-result val ty i))
               (if (null? (cdr exps)) ;; last expression
@@ -68,11 +77,28 @@
   (eval-exp-aux exps 1))
 
 
-(define pretty-print-val-constr
-  (lambda (val)
-    (cases val-constr-exp val
-      (a-val-constr (name types)
-        (string-join (map symbol->string (cons name types)) " ")))))
+(define (run-test string)
+    
+  (define run-test-program
+    (lambda (pgm)
+      (initialize-store!)
+      (init-basic-procedures)
+      (cases program pgm
+        (a-program (global-exps)
+                   (let ([exp ;; for test there will be always one expression
+                          (car (filter (lambda (global-exp) (expression? global-exp)) global-exps))]
+                         [data-exps
+                          (filter (lambda (global-exp) (data-exp? global-exp)) global-exps)])
+
+                     (let* ([env (process-data-exps data-exps (init-env))]
+                            [tenv (create-tenv (init-tenv) env)]
+                            [ty (type-of exp tenv)]
+                            [val (value-of/k exp env (end-cont))])
+                       (pretty-print-expval val)))))))
+
+  (begin
+    (initialize-types-to-check-list!)
+    (run-test-program (scan&parse string))))
 
 
 ;; value-of/k : Exp * Env * Cont -> FinalAnswer
@@ -245,9 +271,6 @@
           (apply-cont (end-cont) w)
           (value-of-thunk/k w (thunk-cont ref (end-cont)))))))
 
-(define run
-  (lambda (string)
-    (run-program (scan&parse string))))
 
 (define type-of-program
     (lambda (pgm)
@@ -339,8 +362,9 @@
  "let (fact :: int) (n :: int) = if n == 0 then 1 else (n * (fact (n - 1))) in (fact 5)")
 |#
 
-(run "data Tree = Empty | Leaf int | Node Tree int Tree;
+(run "       data Tree = Empty | Leaf int | Node Tree int Tree;
              data Bin = Zero | One;
+             data PairList = Pair int-list int-list;
 
              let (f :: Tree) (x :: Tree) = (Leaf y)
                  (y :: int) = 26 + 1 in
@@ -356,4 +380,33 @@
                  else ((head lst) : (take (tail lst) (n - 1)))
              in let (lst :: int-list) (n :: int) = (n : (lst (n + 1)))
               in let (nats :: int-list) = (lst 0)
-               in (take nats 50)")
+               in (take nats 50);
+
+             let
+        (isPrime :: bool) (n :: int) =
+                                      let (aux :: bool) (i :: int) =
+                                                                    if n == i
+                                                                    then True
+                                                                    else if n `mod` i == 0
+                                                                        then False
+                                                                        else (aux (i + 1))
+                                      in (aux 2)
+ 
+        (primes :: int-list) =
+                              let (aux :: int-list) (i :: int) =
+                                                                if isPrime i
+                                                                then i:(aux (i + 1))
+                                                                else (aux (i + 1))
+                              in (aux 2)
+ 
+        (list-ref :: int) (xs :: int-list) (i :: int) =
+                                                        if i == 0
+                                                        then head xs
+                                                        else (list-ref (tail xs) (i - 1))
+
+        (take :: int-list) (lst :: int-list) (n :: int) =
+              if n == 0
+                 then []
+                 else ((head lst) : (take (tail lst) (n - 1)))
+ 
+      in (Pair (take primes 5) (take primes 5))")

@@ -133,6 +133,12 @@
       (unit-val () (an-unit))
       (else (expval-extractor-error 'unit v)))))
 
+(define expval->data-exp
+  (lambda (v)
+    (cases expval v
+      (data-exp-val (name values ty) values)
+      (else (expval-extractor-error 'data-exp-val v)))))
+
 ;; extracts any value
 (define expval->val
   (lambda (v)
@@ -142,7 +148,7 @@
       (proc-val (proc) proc)
       (list-val (lst) lst)
       (unit-val () (an-unit))
-      (data-exp-val (ty val name) val))))
+      (data-exp-val (name values ty) values))))
 
 (define expval-extractor-error
   (lambda (variant value)

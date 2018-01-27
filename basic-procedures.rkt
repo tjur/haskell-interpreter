@@ -9,7 +9,7 @@
 (provide (all-defined-out))
 
 (define number-ops-list
-  '(+ - * / == < <= > >= !=))
+  '(+ - * / == < <= > >= != mod))
 
 (define create-number-procedure
   (lambda (op)
@@ -42,7 +42,8 @@
       ['<= (bool-val (<= val1 val2))]
       ['> (bool-val (> val1 val2))]
       ['>= (bool-val (>= val1 val2))]
-      ['!= (bool-val (not (= val1 val2)))])))
+      ['!= (bool-val (not (= val1 val2)))]
+      ['mod (num-val (modulo val1 val2))])))
 
 (define number-procedure-type-int-int-int
   (proc-type (int-type) (proc-type (int-type) (int-type))))
@@ -61,7 +62,8 @@
     (cons '<= number-procedure-type-int-int-bool)
     (cons '> number-procedure-type-int-int-bool)
     (cons '>= number-procedure-type-int-int-bool)
-    (cons '!= number-procedure-type-int-int-bool)))
+    (cons '!= number-procedure-type-int-int-bool)
+    (cons 'mod number-procedure-type-int-int-int)))
 
 (define create-list-procedure
   (lambda (proc)
