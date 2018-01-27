@@ -22,7 +22,6 @@
         (let-exp p-names p-result-types ps-vars ps-vars-types exps body))
       (empty () body))))
 
-;; translate-declarations : List(Exp) -> Let-without-body x List(Exp)
 (define translate-declarations
   (lambda (exps)
     (letrec ([divide (lambda (exps)
@@ -75,12 +74,17 @@
     (let* ([matching-lambda (lambda (arg-body) (matching-arguments? (caar args) (caaar arg-body)))]
            [matched (filter matching-lambda args-bodies)]
            [not-matched (filter (lambda (x) (not (matching-lambda x))) args-bodies)]
-           [vars-pattern-lambda (lambda (arg-body) (var-exp? (caaar arg-body)))]
-           [matched-var-patterns (filter vars-pattern-lambda matched)])
+           [vars-pattern-lambda (lambda (arg-body) (and (not (var-exp? (caar args))) (var-exp? (caaar arg-body))))]
+           [matched-var-patterns (filter vars-pattern-lambda matched)]
+           [exact-match-lambda (lambda (arg-body) (equal? (caar args) (caaar arg-body)))]
+           [exact-matched (filter exact-match-lambda args-bodies)]
+           [exact-not-matched (filter (lambda (x) (not (exact-match-lambda x))) args-bodies)])
       (list
         matched
         matched-var-patterns
-        not-matched))))
+        not-matched
+        exact-matched
+        exact-not-matched))))
 
 (define group-arguments
   (lambda (args-bodies)
@@ -90,19 +94,24 @@
              [matched-other-patterns (list-ref result 0)]
              [matched-var-patterns (list-ref result 1)]
              [not-matched (list-ref result 2)]
+             [exact-matched (list-ref result 3)]
+             [exact-not-matched (list-ref result 4)]
              [matches (filter (lambda (xs) (not (null? xs))) (list matched-other-patterns matched-var-patterns))])
-        (cons
-          (if (null? (cdr arguments))
+        (if (null? (cdr arguments))
+          (cons
             (ending-argument
-              (map caaar matches)
-              (map cdar matches))
+              (list (caaar exact-matched))
+              (list (cdar exact-matched)))
+            (group-arguments exact-not-matched))
+
+          (cons
             (an-argument
               (map caaar matches)
               (map (lambda (arg-body-list)
                     (group-arguments (map (lambda (arg-body)
-                                            (cons (cdar arg-body) (cdr arg-body))) arg-body-list))) matches)))
+                                            (cons (cdar arg-body) (cdr arg-body))) arg-body-list))) matches))
 
-          (group-arguments not-matched))))))
+            (group-arguments not-matched)))))))
                 
 (define get-pattern-var
   (lambda (pattern-var-n)
@@ -140,8 +149,6 @@
 
               (eopl:error "get-match-exp list-exp not null..."))) ;; TODO
 
-            ;;; $0
-            ;;; x:xs
             ;;; unpack ': ((var-exp x) (var-exp xs))
 
             ;;; $0
@@ -174,7 +181,6 @@
 
                     (let-exp
                       (list head-var)
-                      ;;; (list (any-type))
                       (list (int-type))
                       (list '())
                       (list '())
@@ -184,7 +190,6 @@
                         (list
                           (let-exp
                             (list tail-var)
-                            ;;; (list (any-type))
                             (list (int-list-type))
                             (list '())
                             (list '())

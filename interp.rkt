@@ -38,6 +38,7 @@
                             (map (lambda (exp)
                                   (let-without-body->let-exp let-without-body exp))
                                   others)])
+                    ;;;  (display (pretty-print-exp (car lets)))))))))
                      (evaluate-expressions lets tenv env)))))))
 
 
@@ -430,3 +431,11 @@
       (len :: int) (x:xs :: int-list) = 1 + (len xs);
 
       len [1, 2, 3, 4, 5, 10]")
+
+(run "(fib :: int) (0 :: int) = 0;
+      (fib :: int) (1 :: int) = 1;
+      (fib :: int) (n :: int) = (fib (n - 1)) + (fib (n - 2));
+
+      fib 8;
+      fib 9;
+      fib 10")

@@ -85,7 +85,7 @@
 
           (call-exp (rator rand)
             (string-append
-              "(" ((pretty-exp indents) rator) ((pretty-exp indents) rand) ")"))
+              "(" ((pretty-exp indents) rator) " " ((pretty-exp indents) rand) ")"))
 
           (let-exp (p-names p-result-types ps-vars ps-vars-types exps body)
             (let ((one-let (lambda (var args exp)
