@@ -60,7 +60,13 @@
    (op symbol?)
    (exp1 expression?)
    (exp2 expression?))
-  (missing-case-exp))
+  (missing-case-exp)
+  (check-data-exp-val-exp
+   (expression-to-check expression?)
+   (val-constr-name-to-compare 'symbol))
+  (extract-from-data-exp-val-exp
+   (exp expression?)
+   (index number?)))
 
 
 ;;;;;;;;;;;;;;;; data expression ;;;;;;;;;;;;;;;;
@@ -244,4 +250,10 @@
   (common-op-cont2
    (op symbol?)
    (val1 expval?)
+   (saved-cont continuation?))
+  (check-data-exp-val-cont
+   (val-constr-name symbol?)
+   (saved-cont continuation?))
+  (extract-from-data-exp-val-cont
+   (index number?)
    (saved-cont continuation?)))

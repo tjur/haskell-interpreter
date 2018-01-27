@@ -149,6 +149,14 @@
       (missing-case-exp ()
         (eopl:error "Missing declaration case!\n"))
 
+      (check-data-exp-val-exp (exp1 val-constr-name)
+                          (value-of/k exp1 env
+                                      (check-data-exp-val-cont val-constr-name cont)))
+
+      (extract-from-data-exp-val-exp (exp1 index)
+                                     (value-of/k exp1 env
+                                                 (extract-from-data-exp-val-cont index cont)))
+
       (else (eopl:error "Not implemented for ~s" exp))
       
       )))
@@ -230,6 +238,27 @@
                         (apply-cont saved-cont
                                     (eval-common-operator op val1 val)))
 
+      (check-data-exp-val-cont (val-constr-name-to-compare saved-cont)
+                               (cases expval val
+                                 (data-exp-val (val-constr-name values type)
+                                               (apply-cont saved-cont
+                                                           (bool-val (equal?
+                                                                      val-constr-name
+                                                                      val-constr-name-to-compare))))
+                                 (else (eopl:error 'apply-cont
+                                                   "Expected data-exp-val but got: ~s" val))))
+
+      (extract-from-data-exp-val-cont (index saved-cont)
+                                      (cases expval val
+                                        (data-exp-val (val-constr-name values type)
+                                                      (let* ([ref (list-ref values index)]
+                                                             [w (deref ref)])
+                                                        (if (expval? w)
+                                                            (apply-cont saved-cont w)
+                                                            (value-of-thunk/k w (thunk-cont ref saved-cont)))))
+                                        (else (eopl:error 'apply-cont
+                                                          "Expected data-exp-val but got: ~s" val))))
+      
       )))
 
 
