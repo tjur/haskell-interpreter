@@ -21,7 +21,7 @@
   (lambda (val ty i)
     (string-append
       (format "Expression ~s\n" i)
-      (string-append (pretty-print-expval val) " :: " (symbol->string (type-to-external-form ty)) "\n\n"))))
+      (string-append (pretty-print-expval val) (format " :: ~s\n\n" (type-to-external-form ty))))))
 
 (define pretty-print-program
   (lambda (prog)

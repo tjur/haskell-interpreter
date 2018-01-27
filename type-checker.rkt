@@ -138,6 +138,10 @@
 
       (missing-case-exp () (any-type))
 
+      (check-data-exp-val-exp (exp val-constr-name) (any-type)) ;; TODO
+
+      (extract-from-data-exp-val-exp (exp index) (any-type)) ;; TODO
+
       (else (eopl:error 'type-error
              "Type checker is not defined for expression: ~s" exp))
 

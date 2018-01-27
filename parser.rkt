@@ -133,6 +133,9 @@
                [(<big-letter-name>) (var-exp $1)]
                [(OPENB <operator> CLOSEB) (var-exp $2)]]
 
+    [<var-exp-without-big-letter-name> [(<identifier>) (var-exp $1)]
+                                       [(OPENB <operator> CLOSEB) (var-exp $2)]]
+
     ;; if
     [<if-exp> [(IF <expression> THEN <expression> ELSE <expression>) (if-exp $2 $4 $6)]]
 
@@ -189,7 +192,7 @@
     [<argument> [(<value-exp>) $1]
                 [(<argument> COLON <argument>) (unpack-exp ': (list $1 $3))]
                 [(<big-letter-name> <arguments>) (unpack-exp $1 $2)]
-                [(<var-exp>) $1]
+                [(<var-exp-without-big-letter-name>) $1]
                 [(OPENB <argument> CLOSEB) $2]]
 
     [<arguments> [() '()]

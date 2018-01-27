@@ -63,7 +63,7 @@
   (missing-case-exp)
   (check-data-exp-val-exp
    (expression-to-check expression?)
-   (val-constr-name-to-compare 'symbol))
+   (val-constr-name-to-compare symbol?))
   (extract-from-data-exp-val-exp
    (exp expression?)
    (index number?)))

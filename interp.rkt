@@ -407,35 +407,42 @@
 ;;;               in let (nats :: int-list) = (lst 0)
 ;;;                in (take nats 50)")
 
-(run "(fact :: int) (0 :: int) = 1;
-      (fact :: int) (n :: int) = n * (fact (n - 1));
-      fact 5")
+;;; (run "(fact :: int) (0 :: int) = 1;
+;;;       (fact :: int) (n :: int) = n * (fact (n - 1));
+;;;       fact 5")
 
-(run "(and :: bool) (True :: bool) (True :: bool) = True;
-      (and :: bool) (x :: bool) (y :: bool) = False;
+;;; (run "(and :: bool) (True :: bool) (True :: bool) = True;
+;;;       (and :: bool) (x :: bool) (y :: bool) = False;
       
-      True `and` False")
+;;;       True `and` False")
 
-(run "(sum :: int) ([] :: int-list) = 0;
-      (sum :: int) (x:xs :: int-list) = x + (sum  xs);
+;;; (run "(sum :: int) ([] :: int-list) = 0;
+;;;       (sum :: int) (x:xs :: int-list) = x + (sum  xs);
 
-      sum [1, 2, 3, 4]")
+;;;       sum [1, 2, 3, 4]")
 
-(run "(rev :: int-list) ([] :: int-list) (acc :: int-list) = acc;
-      (rev :: int-list) (x:xs :: int-list) (acc :: int-list) = rev xs (x:acc);
+;;; (run "(rev :: int-list) ([] :: int-list) (acc :: int-list) = acc;
+;;;       (rev :: int-list) (x:xs :: int-list) (acc :: int-list) = rev xs (x:acc);
 
-      rev [5, 4, 3, 2, 1] []")
+;;;       rev [5, 4, 3, 2, 1] []")
 
-(run "(len :: int) ([] :: int-list) = 0;
-      (len :: int) (x:(y:xs) :: int-list) = 2 + (len xs);
-      (len :: int) (x:xs :: int-list) = 1 + (len xs);
+;;; (run "(len :: int) ([] :: int-list) = 0;
+;;;       (len :: int) (x:(y:xs) :: int-list) = 2 + (len xs);
+;;;       (len :: int) (x:xs :: int-list) = 1 + (len xs);
 
-      len [1, 2, 3, 4, 5, 10]")
+;;;       len [1, 2, 3, 4, 5, 10]")
 
-(run "(fib :: int) (0 :: int) = 0;
-      (fib :: int) (1 :: int) = 1;
-      (fib :: int) (n :: int) = (fib (n - 1)) + (fib (n - 2));
+;;; (run "(fib :: int) (0 :: int) = 0;
+;;;       (fib :: int) (1 :: int) = 1;
+;;;       (fib :: int) (n :: int) = (fib (n - 1)) + (fib (n - 2));
 
-      fib 8;
-      fib 9;
-      fib 10")
+;;;       (ones :: int-list) = 1:ones;
+      
+;;;       (head (tail ones)) + (head ones)")
+
+(run "data Tree = Leaf | Node Tree int Tree;
+
+      (sumTree :: int) (Leaf :: Tree) = 0;
+      (sumTree :: int) (Node l x r :: Tree) = sumTree l + x + (sumTree r);
+
+      sumTree (Node Leaf 10 (Node Leaf 5 Leaf))")

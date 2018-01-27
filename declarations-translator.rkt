@@ -1,6 +1,12 @@
 #lang eopl
 
-(require (only-in racket/base foldr filter build-list length))
+(require (only-in racket/base
+                  foldl
+                  foldr
+                  filter
+                  build-list
+                  length))
+
 (require "datatypes.rkt")
 (require "parser.rkt")
 
@@ -149,27 +155,9 @@
 
               (eopl:error "get-match-exp list-exp not null..."))) ;; TODO
 
-            ;;; unpack ': ((var-exp x) (var-exp xs))
-
-            ;;; $0
-            ;;; (Node l x r)
-            ;;; unpack 'Node (l x r) 
-
-            ;;; (if-exp
-            ;;;   (sprawdzmidatatype-exp (var-exp $0) 'Node)
-
-            ;;;   (sprawdzmidatatype-exp exp1 valconstr
-            ;;;     (== (wyjąc konstruktor (valueof exp1)) 'Node)
-
-            ;;;   (wyjmijmi-exp exp i
-            ;;;     (
-
-              ;;; sprawdzmidatatype-exp :: expression * symbol -> bool-val
-              ;;; wyjmijmi-exp :: expression * int -> expval/thunk
-
           (unpack-exp (var args)
-            (if (eq? var ':)
-              (let ([next-else-body (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)])
+            (let ([next-else-body (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)])
+              (if (eq? var ':)
                 (if-exp
                   (call-exp (var-exp 'empty) (var-exp pattern-var))
                   next-else-body
@@ -195,9 +183,30 @@
                             (list '())
                             (list (call-exp (var-exp 'tail) (var-exp pattern-var)))
                             (get-match-exp tail-var (list (list tail-arg (int-list-type))) (list then-body) next-else-body)))
-                        next-else-body)))))
+                        next-else-body))))
 
-              (eopl:error "get-match-exp unpack-exp not implemented")))
+                (if-exp
+                  (check-data-exp-val-exp (var-exp pattern-var) var)
+
+                    (foldl
+                      (lambda (i arg then-body)
+                        (let ([new-var (string->symbol (string-append (symbol->string pattern-var) (number->string i) "_"))])
+                          (let-exp
+                            (list new-var)
+                            (list (any-type)) ;; TODO
+                            (list '())
+                            (list '())
+                            (list (extract-from-data-exp-val-exp (var-exp pattern-var) i))
+                            (get-match-exp
+                              new-var
+                              (list (list (list-ref args i) (any-type)))
+                              (list then-body)
+                              next-else-body))))
+                      then-body
+                      (build-list (length args) values)
+                      args)
+
+                    next-else-body))))
 
           (var-exp (var)
             (let-exp
