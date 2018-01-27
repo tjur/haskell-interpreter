@@ -70,8 +70,10 @@
               #:before-first "["
               #:after-last "]"))
 
-          (type-value-exp (id val-constr-name b-vars ty)
-                          "Not implemented yet!") ;; TODO
+          (type-value-exp (id val-constr-name b-vars b-vars-types ty)
+                          (string-append
+                           val-constr-name " "
+                           (string-join (map symbol->string b-vars) ", " #:before-first "(" #:after-last ")")))
 
           (if-exp (exp1 exp2 exp3)
             (string-append

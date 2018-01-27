@@ -107,7 +107,7 @@
       (list-exp (exps)
                 (value-of-list/k exps env cont))
 
-      (type-value-exp (id val-constr-name b-vars ty)
+      (type-value-exp (id val-constr-name b-vars b-vars-types ty)
                       (let ([values (map (lambda (var) (apply-env env var)) b-vars)])
                         (apply-cont cont (data-exp-val val-constr-name values ty))))
 

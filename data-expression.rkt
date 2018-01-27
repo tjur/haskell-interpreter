@@ -75,16 +75,16 @@
           (generate-fresh-b-vars (- i 1) (cons (string->symbol (string-append "x" (number->string i))) acc)))))
   
   (cases val-constr-exp val-constr
-    (a-val-constr (val-constr-name types)
-                  (let* ([fresh-b-vars (generate-fresh-b-vars (length types) '())]
-                         [fresh-type-value (gen-fresh-type-value val-constr-name data-type fresh-b-vars)] 
-                         [proc (create-proc (reverse types) (reverse fresh-b-vars) fresh-type-value)])
+    (a-val-constr (val-constr-name b-vars-types)
+                  (let* ([fresh-b-vars (generate-fresh-b-vars (length b-vars-types) '())]
+                         [fresh-type-value (gen-fresh-type-value val-constr-name data-type fresh-b-vars b-vars-types)] 
+                         [proc (create-proc (reverse b-vars-types) (reverse fresh-b-vars) fresh-type-value)])
                     (extend-env val-constr-name (newref (a-thunk proc (empty-env))) env))))) ;; we don't need for value contructor env so put empty-env
 
 
 (define gen-fresh-type-value
-  (lambda (val-constr-name data-type b-vars)
-    (let ([fresh-type-value (type-value-exp type-value-id val-constr-name b-vars data-type)])
+  (lambda (val-constr-name data-type b-vars b-vars-types)
+    (let ([fresh-type-value (type-value-exp type-value-id val-constr-name b-vars b-vars-types data-type)])
           (begin
             (set! type-value-id (+ type-value-id 1))
             fresh-type-value))))

@@ -20,6 +20,7 @@
    (id number?)
    (val-constr-name symbol?) ;; name of value contructor that creates that value
    (b-vars (list-of symbol?)) ;; b-vars that takes value constr before it returns that value
+   (b-vars-types (list-of type?))
    (type type?))
   (if-exp
    (if-exp1 expression?)
