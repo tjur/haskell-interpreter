@@ -381,20 +381,20 @@
       (fact :: int) (n :: int) = n * (fact (n - 1));
       fact 5")
 
-;;; (run "(and :: bool) (True :: bool) (True :: bool) = True;
-;;;       (and :: bool) (x :: bool) (y :: bool) = False;
+(run "(and :: bool) (True :: bool) (True :: bool) = True;
+      (and :: bool) (x :: bool) (y :: bool) = False;
       
-;;;       True `and` False")
+      True `and` False")
 
 (run "(sum :: int) ([] :: int-list) = 0;
       (sum :: int) (x:xs :: int-list) = x + (sum  xs);
 
       sum [1, 2, 3, 4]")
 
-;;; (run "(rev :: int-list) ([] :: int-list) (acc :: int-list) = acc;
-;;;       (rev :: int-list) (x:xs :: int-list) (acc :: int-list) = rev xs (x:acc);
+(run "(rev :: int-list) ([] :: int-list) (acc :: int-list) = acc;
+      (rev :: int-list) (x:xs :: int-list) (acc :: int-list) = rev xs (x:acc);
 
-;;;       rev [5, 4, 3, 2, 1] []")
+      rev [5, 4, 3, 2, 1] []")
 
 (run "(len :: int) ([] :: int-list) = 0;
       (len :: int) (x:(y:xs) :: int-list) = 2 + (len xs);

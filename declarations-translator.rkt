@@ -214,13 +214,10 @@
         (cases argument arg
           (an-argument (pattern-exps grouped-args-list)
             (let* ([next-bodies (map (lambda (grouped-args)
-                                      (lambda-exp
-                                        next-pattern-var
-                                        (any-type) ;; TODO
                                         (translate-to-lambdas
                                           next-pattern-var
                                           (+ pattern-var-n 1)
-                                          grouped-args))) grouped-args-list)])
+                                          grouped-args)) grouped-args-list)])
               (get-match-exp pattern-var pattern-exps next-bodies next-case-body)))
 
           (ending-argument (pattern-exps bodies)
@@ -284,16 +281,16 @@
 
 (define start-translations
   (lambda (args-body-list)
-    (if (null? (caar args-body-list))
-      (cdar args-body-list)
-      (lambda-exp
-        (get-pattern-var 0)
-        ;;; (cdaaar args-body-list)
-        (int-type) ;; TODO
-        (translate-to-lambdas
-          (get-pattern-var 0)
+    (let ([first-args (caar args-body-list)])
+      (if (null? first-args)
+        (cdar args-body-list)
+        (lambdaize-arguments
+          first-args
           0
-          (group-arguments args-body-list))))))
+          (translate-to-lambdas
+            (get-pattern-var 0)
+            0
+            (group-arguments args-body-list)))))))
 
 (define join5
   (lambda (lst)
@@ -306,3 +303,15 @@
           (cons (list-ref hd 2) (list-ref result 2))
           (cons (list-ref hd 3) (list-ref result 3))
           (cons (list-ref hd 4) (list-ref result 4)))))))
+
+
+(define lambdaize-arguments
+  (lambda (args var-i body)
+    (if (null? args)
+      body
+      (let* ([arg-type (car args)]
+             [type (cadr arg-type)])
+        (lambda-exp
+          (get-pattern-var var-i)
+          type
+          (lambdaize-arguments (cdr args) (+ var-i 1) body))))))
