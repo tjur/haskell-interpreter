@@ -45,6 +45,12 @@
     (test-if-2 "if 5 > 7 then 1/0 else 3+1" "4")
     (test-if-3 "if empty [42] then 1 else [2,3]" error)
 
+    ;; function application
+    (test-fun-app-1 "\\ (lst :: int-list) -> (42:lst) [1,2,3]" "[42, 1, 2, 3]")
+    (test-fun-app-2 "\\(x :: int) -> \\(y :: int) -> \\(z :: int) -> (x + y) 1 2 (1/0)" "3")
+    (test-fun-app-3 "(\\(x :: int) (y :: int) (z :: int) -> (x + y)) 1 2 (1/0)" "3")
+    (test-fun-app-4 "\\(x :: int) -> 42 True" error)
+
     ;; simple variables with let
     (test-var-1 "let (x :: int) = 42 in x" "42")
     (test-var-2 "let (x :: int) = [] in 42" error)
@@ -53,4 +59,34 @@
                   in (2 * y + y)" "9")
     (test-var-4 "100 * x" error)
 
+    ;; let
+    (test-let-1 "let (f :: int) (x :: int) = 42 in (f (1/0))" "42")
+    (test-let-2 "let (f :: int) (x :: int) (y :: int) = x*x + y in (f 2 3)" "7")
+    (test-let-3 "let (add1 :: int -> int) = (+) 1 in (add1 10)" "11")
+    (test-let-4
+     "let (fact :: int) (n :: int) = if n == 0 then 1 else (n * (fact (n - 1))) in (fact 5)" "120")
+    (test-let-5 "let (f :: int-list) (x :: unit) = y
+                     (y :: int-list) = [1,2,3]
+                  in (f ())" "[1, 2, 3]")
+    (test-let-6 "let (even :: bool) (x :: int) = if x == 0 then True else (odd (x - 1))
+                     (odd :: bool) (x :: int) = if x == 0 then False else (even(x - 1))
+                  in (even 42)" "True")
+    (test-let-7 "let (even :: bool) (x :: int) = if x == 0 then True else (odd (x - 1))
+                     (odd :: bool) (x :: int) = if x == 0 then False else (even(x - 1))
+                  in (odd 42)" "False")
+    (test-let-8 "let (ones :: int-list) = 1:ones
+                     -- comment
+                     (take :: int-list) (lst :: int-list) (n :: int) =
+                       if n == 0 then [] else ((head lst) : (take (tail lst) (n - 1)))
+                  in (take ones 5)" "[1, 1, 1, 1, 1]")
+    (test-let-9 "let (xs :: int-list) = 1:ys
+                     (ys :: int-list) = 2:xs
+                     -- comment
+                     (take :: int-list) (lst :: int-list) (n :: int) =
+                       if n == 0 then [] else ((head lst) : (take (tail lst) (n - 1)))
+                  in (take xs 6)" "[1, 2, 1, 2, 1, 2]")
+    (test-let-10 "let (f :: bool) (x :: int) = x in 42" error)
+    (test-let-11 "let (x :: int -> (int -> int)) = (>=) in 42" error)
+    
+    
     ))
