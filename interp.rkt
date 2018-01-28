@@ -446,3 +446,8 @@
       (sumTree :: int) (Node l x r :: Tree) = sumTree l + x + (sumTree r);
 
       sumTree (Node Leaf 10 (Node Leaf 5 Leaf))")
+
+;;; (run "(f :: int) (x :: int) (True :: bool) = x;
+;;;       (f :: int) (x :: int) (b :: bool) = x;
+
+;;;       f 5 False")

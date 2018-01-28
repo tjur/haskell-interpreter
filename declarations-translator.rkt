@@ -9,6 +9,7 @@
 
 (require "datatypes.rkt")
 (require "parser.rkt")
+(require "data-expression.rkt")
 
 (provide translate-declarations let-without-body->let-exp)
 
@@ -121,7 +122,7 @@
                 
 (define get-pattern-var
   (lambda (pattern-var-n)
-    (string->symbol (string-append "_$" (number->string pattern-var-n) "_"))))
+    (string->symbol (string-append "_$" (number->string pattern-var-n)))))
 
 (define get-match-exp
   (lambda (pattern-var pattern-exps then-bodies else-body)
@@ -153,7 +154,14 @@
                 then-body
                 (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body))
 
-              (eopl:error "get-match-exp list-exp not null..."))) ;; TODO
+            (get-match-exp pattern-var ;; korzystam z unpack-exp ':
+              (cons
+                (list
+                  (unpack-exp ': (list (car xs) (list-exp (cdr xs))))
+                  (int-list-type))
+                (cdr pattern-exps))
+              then-bodies
+              else-body)))
 
           (unpack-exp (var args)
             (let ([next-else-body (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)])
@@ -164,8 +172,8 @@
 
                   (let* ([head-arg (car args)]
                         [tail-arg (cadr args)]
-                        [head-var (string->symbol (string-append (symbol->string pattern-var) "hd_"))]
-                        [tail-var (string->symbol (string-append (symbol->string pattern-var) "tl_"))])
+                        [head-var (string->symbol (string-append (symbol->string pattern-var) "hd"))]
+                        [tail-var (string->symbol (string-append (symbol->string pattern-var) "tl"))])
 
                     (let-exp
                       (list head-var)
@@ -188,18 +196,19 @@
                 (if-exp
                   (check-data-exp-val-exp (var-exp pattern-var) var)
 
-                    (foldl
+                    (foldr
                       (lambda (i arg then-body)
-                        (let ([new-var (string->symbol (string-append (symbol->string pattern-var) (number->string i) "_"))])
+                        (let ([new-var (string->symbol (string-append (symbol->string pattern-var) "[" (number->string i) "]"))]
+                              [new-var-type (list-ref (get-val-constr-arg-types var) i)])
                           (let-exp
                             (list new-var)
-                            (list (any-type)) ;; TODO
+                            (list new-var-type)
                             (list '())
                             (list '())
                             (list (extract-from-data-exp-val-exp (var-exp pattern-var) i))
                             (get-match-exp
                               new-var
-                              (list (list (list-ref args i) (any-type)))
+                              (list (list (list-ref args i) new-var-type))
                               (list then-body)
                               next-else-body))))
                       then-body
