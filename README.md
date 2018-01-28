@@ -10,5 +10,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Authors
 
-* **Tomasz Jurkiewicz**
-* **Dominik Rabij**
+* **[Tomasz Jurkiewicz](https://github.com/tjur)**
+* **[Dominik Rabij](https://github.com/jamone-)**
