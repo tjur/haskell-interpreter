@@ -4,7 +4,7 @@
 (require "basic-procedures.rkt")
 (require "pretty-printer.rkt")
 (require (only-in racket/base
-                  foldr))
+                  foldr void))
 
 (provide type-of-exp type-of type-to-external-form init-tenv extend-tenv tenv-with-declarations)
 
@@ -27,7 +27,7 @@
 (define check-many-types!
   (lambda (types1 types2 exps)
     (if (null? types1)
-        42
+        (void)
         (begin
           (check-equal-type! (car types1) (car types2) (car exps))
           (check-many-types! (cdr types1) (cdr types2) (cdr exps))))))
@@ -35,7 +35,7 @@
 ;; report-unequal-types : Type * Type * Exp -> Unspecified
 (define report-unequal-types
   (lambda (ty1 ty2 exp)
-    (eopl:error 'check-equal-type!  
+    (eopl:error 'type-error  
                 "Types didn't match: ~s != ~a in~%~a"
                 (type-to-external-form ty1)
                 (type-to-external-form ty2)
@@ -168,7 +168,7 @@
 
 (define report-rator-not-a-proc-type
   (lambda (rator-type rator)
-    (eopl:error 'type-of-expression
+    (eopl:error 'type-error
                 "Rator not a proc type:~%~s~%had rator type ~s"   
                 rator 
                 (type-to-external-form rator-type))))
