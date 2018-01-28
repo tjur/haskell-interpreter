@@ -1,4 +1,4 @@
-(take :: int-list) (x:xs :: int-list) (0 :: int) = [x];
+(take :: int-list) (x:xs :: int-list) (0 :: int) = [];
 (take :: int-list) (x:xs :: int-list) (n :: int) = x:(take xs (n - 1));
 
 (drop :: int-list) (0 :: int) (xs :: int-list) = xs;
