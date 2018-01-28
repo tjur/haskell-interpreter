@@ -120,4 +120,11 @@
        even 27"
        "False")
 
+    (test-declaration-5
+      "((!!) :: int) (x:xs :: int-list) (0 :: int) = x;
+       ((!!) :: int) (x:xs :: int-list) (n :: int) = xs !! (n - 1);
+      
+       [0, 1, 2, 3, 4, 5] !! 4"
+       "4")
+
     ))
