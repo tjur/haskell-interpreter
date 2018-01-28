@@ -18,7 +18,7 @@
   [lex:digit (:/ #\0 #\9)]
   [lex:whitespace (:or #\newline #\return #\tab #\space #\vtab)]
   [lex:comment (:: (:* lex:whitespace) "--" (:* (:~ #\newline)) #\newline)]
-  [lex:identifier (:: lex:letter (:* (:or lex:letter lex:digit "_" "-")))]
+  [lex:identifier (:: (:or lex:letter "_") (:* (:or lex:letter lex:digit "_" "-")))]
   [lex:symbol (:or "!" "#" "$" "%" "&" "*" "+" "." "/" "<" "=" ">" "?" "@" "\\" "^" "|" "-" "~" ":")])
 
 (define-empty-tokens empty-tokens (
