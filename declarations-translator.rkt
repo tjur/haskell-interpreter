@@ -5,12 +5,15 @@
                   foldr
                   filter
                   build-list
-                  length))
+                  length
+                  void
+                  format))
 
 (require "datatypes.rkt")
 (require "parser.rkt")
 (require "data-expression.rkt")
 (require "pretty-printer.rkt")
+(require "type-checker.rkt")
 
 (provide translate-declarations let-without-body->let-exp)
 
@@ -262,8 +265,12 @@
 
 (define declaration-exp->var
   (lambda (declaration)
+    (car (declaration-exp->var-type declaration))))
+
+(define declaration-exp->var-type
+  (lambda (declaration)
     (cases expression declaration
-      (declaration-exp (var-type args body) (car var-type))
+      (declaration-exp (var-type args body) var-type)
       (else (eopl:error "impossible!")))))
 
 (define get-same-and-rest-declarations
@@ -303,12 +310,14 @@
                                  [var-type (cadr var-and-type)]
                                  [declarations (cdr group)]
                                  [args-body-list (map declaration-exp->argsnbody declarations)])
-                            (list
-                              var-name
-                              var-type
-                              (build-list (length (caar args-body-list)) get-pattern-var)
-                              (map cadr (caar args-body-list))
-                              (start-translations var-name args-body-list))))
+                            (begin
+                              (check-declaration-types! var-name declarations)
+                              (list
+                                var-name
+                                var-type
+                                (build-list (length (caar args-body-list)) get-pattern-var)
+                                (map cadr (caar args-body-list))
+                                (start-translations var-name args-body-list)))))
                         declarations-grouped)]
            [joined (join5 groups)])
       (no-body-let
@@ -319,18 +328,20 @@
         (list-ref joined 4)))))
 
 (define start-translations
-  (lambda (var-name args-body-list)
+  (lambda (declaration-var args-body-list)
     (let ([first-args (caar args-body-list)])
       (if (null? first-args)
         (cdar args-body-list)
-        (lambdaize-arguments
-          first-args
-          0
-          (translate-bodies
-            var-name
-            (get-pattern-var 0)
+        (begin
+          (check-declaration-arguments-types! declaration-var args-body-list)
+          (lambdaize-arguments
+            first-args
             0
-            (group-arguments args-body-list)))))))
+            (translate-bodies
+              declaration-var
+              (get-pattern-var 0)
+              0
+              (group-arguments args-body-list))))))))
 
 (define join5
   (lambda (lst)
@@ -355,3 +366,41 @@
           (get-pattern-var var-i)
           type
           (lambdaize-arguments (cdr args) (+ var-i 1) body))))))
+
+(define check-declaration-arguments-types!
+  (lambda (declaration-var args-body-list)
+    (let* ([first-args (caar args-body-list)]
+           [types (map cadr first-args)])
+      (for-each
+        (lambda (args-body)
+          (for-each
+            (lambda (arg type)
+              (let ([arg-type (cadr arg)])
+                (check-if-types-match! declaration-var type arg-type)))
+            (car args-body)
+            types))
+        args-body-list))))
+
+(define check-declaration-types!
+  (lambda (declaration-var declarations)
+    (let ([type (cadr (declaration-exp->var-type (car declarations)))])
+      (for-each
+        (lambda (declaration)
+          (let ([declaration-type (cadr (declaration-exp->var-type declaration))])
+            (check-if-types-match!
+              declaration-var
+              type
+              declaration-type)))
+        declarations))))
+
+(define check-if-types-match!
+  (lambda (declaration-var ty1 ty2)
+    (if (equal? ty1 ty2)
+      (void)
+      (eopl:error
+        'syntax-error
+        (string-append
+          "Types don't match in "
+          (symbol->string declaration-var)
+          " declaration: "
+          (format "~s != ~s\n" (type-to-external-form ty2) (type-to-external-form ty1)))))))
