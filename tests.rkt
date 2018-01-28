@@ -53,4 +53,10 @@
                   in (2 * y + y)" "9")
     (test-var-4 "100 * x" error)
 
+    ;; declarations
+    (test-declaration-1
+      "(id :: int) (x :: int) = x;
+       id 420"
+       "420")
+
     ))
