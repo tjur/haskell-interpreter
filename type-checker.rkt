@@ -6,7 +6,9 @@
 (require (only-in racket/base
                   foldr))
 
-(provide type-of-exp type-of type-to-external-form init-tenv extend-tenv)
+(provide type-of-exp type-of type-to-external-form init-tenv extend-tenv tenv-with-declarations)
+
+(define tenv-with-declarations 'empty)
 
 (define any-type?
   (lambda (ty)
@@ -141,6 +143,10 @@
       (check-data-exp-val-exp (exp val-constr-name) (bool-type))
 
       (extract-from-data-exp-val-exp (exp index) (any-type))
+
+      (empty-exp ()
+                    (set! tenv-with-declarations tenv)
+                    (unit-type))
 
       (else (eopl:error 'type-error
              "Type checker is not defined for expression: ~s" exp))

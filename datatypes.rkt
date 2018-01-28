@@ -66,7 +66,9 @@
    (val-constr-name-to-compare symbol?))
   (extract-from-data-exp-val-exp
    (exp expression?)
-   (index number?)))
+   (index number?))
+  (empty-exp)) ;; artificial expression, does not occur in program's ast
+               ;; used for initializing env with global declarations
 
 
 ;;;;;;;;;;;;;;;; data expression ;;;;;;;;;;;;;;;;

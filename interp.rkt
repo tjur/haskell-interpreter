@@ -19,6 +19,8 @@
 
 ;;;;;;;;;;;;;;;; the interpreter ;;;;;;;;;;;;;;;;
 
+(define env-with-declarations 'empty)
+
 ;; run : string -> ()
 (define run
   (lambda (string)
@@ -42,13 +44,12 @@
                           [tenv (create-tenv (init-tenv) env)]
                           [translated (translate-declarations expressions)]
                           [let-without-body (car translated)]
-                          [others (cdr translated)]
-                          [lets
-                            (map (lambda (exp)
-                                  (let-without-body->let-exp let-without-body exp))
-                                  others)])
-                    ;;;  (display (pretty-print-exp (car lets)))))))))
-                     (evaluate-expressions lets tenv env)))))))
+                          [empty-let (let-without-body->let-exp let-without-body (empty-exp))]
+                          [other-exps (cdr translated)])
+                    (begin
+                      (type-of empty-let tenv)
+                      (value-of/k empty-let env (end-cont))
+                      (evaluate-expressions other-exps tenv-with-declarations env-with-declarations))))))))
 
 
 (define (create-tenv tenv env)
@@ -183,6 +184,10 @@
       (extract-from-data-exp-val-exp (exp1 index)
                                      (value-of/k exp1 env
                                                  (extract-from-data-exp-val-cont index cont)))
+
+      (empty-exp ()
+                  (set! env-with-declarations env)
+                  (apply-cont cont (unit-val)))
 
       (else (eopl:error "Not implemented for ~s" exp))
       
@@ -466,7 +471,6 @@
 (run "data Tree = Leaf | Node Tree int Tree;
 
       (sumTree :: int) (Leaf :: Tree) = 0;
-      (sumTree :: int) (Node l x r :: Tree) = sumTree l + x + (sumTree r);
 
       sumTree (Node Leaf 10 (Node Leaf 5 Leaf))")
 
