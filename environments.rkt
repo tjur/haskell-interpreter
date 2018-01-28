@@ -17,7 +17,6 @@
 
 ;;;;;;;;;;;;;;;; environment constructors and observers ;;;;;;;;;;;;;;;;
 
-
 (define extend-env* 
   (lambda (bvars bvals saved-env)
     (if (null? bvars)
@@ -54,36 +53,33 @@
             (+ n 1)))
       (else #f))))
 
-;; for variables (empty (car b-vars)) creates newref to thunk
+
 (define (make-extend-env-rec p-names p-bodies env)
   
-  (define create-newrefs-for-vars-and-extend-env-rec
+  (define create-newrefs-and-extend-env-rec
     (lambda (p-names p-bodies p-names-acc p-bodies-acc var-refs)
       (if (null? p-names)
           (list (extend-env-rec* (reverse p-names-acc) (reverse p-bodies-acc) env) var-refs)
           (let* [(exp1 (car p-bodies))
-                 (ref (newref (a-thunk exp1 (empty-env))))] ;; temporary env - we have to change it later
-            (create-newrefs-for-vars-and-extend-env-rec
+                 (ref (newref (a-thunk exp1 (empty-env))))] ;; temporary env - we have to change it later with update-refs-with-new-env
+            (create-newrefs-and-extend-env-rec
              (cdr p-names) (cdr p-bodies)
              (cons (car p-names) p-names-acc) (cons ref p-bodies-acc) (cons ref var-refs))))))
-              ;; (create-newrefs-for-vars-and-extend-env-rec
-               ;; (cdr p-names) (cdr p-bodies)
-               ;; (cons (car p-names) p-names-acc) (cons (car p-bodies) p-bodies-acc) var-refs)))))
 
-  (define update-var-refs-with-new-env
-    (lambda (var-refs new-env)
-      (if (null? var-refs)
+  (define update-refs-with-new-env
+    (lambda (refs new-env)
+      (if (null? refs)
           new-env
-          (let* [(ref (car var-refs))
+          (let* [(ref (car refs))
                  (th (deref ref))]
             (cases thunk th
               (a-thunk (exp _)
                        (begin
                          (setref! ref (a-thunk exp new-env))
-                         (update-var-refs-with-new-env (cdr var-refs) new-env))))))))
+                         (update-refs-with-new-env (cdr refs) new-env))))))))
 
-  (let* [(result (create-newrefs-for-vars-and-extend-env-rec
+  (let* [(result (create-newrefs-and-extend-env-rec
                   p-names p-bodies '() '() '()))
          (new-env (list-ref result 0))
-         (var-refs (list-ref result 1))]
-    (update-var-refs-with-new-env var-refs new-env)))
+         (refs (list-ref result 1))]
+    (update-refs-with-new-env refs new-env)))
