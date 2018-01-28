@@ -93,6 +93,8 @@
     [<identifier-with-type> [(OPENB <big-letter-name> DOUBLECOLON <type> CLOSEB) (list $2 $4)]
                             [(OPENB <identifier> DOUBLECOLON <type> CLOSEB) (list $2 $4)]]
 
+    [<operator-with-type> [(OPENB OPENB <operator> CLOSEB DOUBLECOLON <type> CLOSEB) (list $3 $6)]]
+
     ;; types
     [<type> [(<int-type>) (int-type)]
             [(<bool-type>) (bool-type)]
@@ -187,7 +189,7 @@
 
     ;; global declarations
     [<declaration-exp> [(<identifier-with-type> <arguments-with-type> EQUALS <expression>) (declaration-exp $1 $2 $4)]
-                       [(OPENB <operator> CLOSEB <arguments-with-type> EQUALS <expression>) (declaration-exp $2 $4 $6)]]
+                       [(<operator-with-type>   <arguments-with-type> EQUALS <expression>) (declaration-exp $1 $2 $4)]]
 
     [<argument> [(<value-exp>) $1]
                 [(<argument> COLON <argument>) (unpack-exp ': (list $1 $3))]

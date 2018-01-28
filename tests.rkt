@@ -88,5 +88,10 @@
     (test-let-10 "let (f :: bool) (x :: int) = x in 42" error)
     (test-let-11 "let (x :: int -> (int -> int)) = (>=) in 42" error)
     
-    
+    ;; declarations
+    (test-declaration-1
+      "(id :: int) (x :: int) = x;
+       id 420"
+       "420")
+
     ))

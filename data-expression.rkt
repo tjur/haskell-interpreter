@@ -33,7 +33,7 @@
       (if (null? new-list)
           (void) ;; Ok - every type exist
           (if (null? (cdr new-list))
-              (eopl:error 'type-error "No such type: ~s" (car new-list))
+              (eopl:error 'type-error "No such type: ~s" (type-to-external-form (car new-list)))
               (eopl:error 'type-error "No such types: ~s" new-list))))))
   
 
