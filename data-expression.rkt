@@ -5,9 +5,9 @@
 (require "store.rkt")
 (require "type-checker.rkt")
 (require (only-in racket/base
-                  foldl reverse remove*))
+                  foldl reverse remove* void))
 
-(provide process-data-exps add-type-to-check-list!)
+(provide process-data-exps add-type-to-check-list! get-val-constr-arg-types)
 
 
 (define type-value-id 'uninitialized)
@@ -27,7 +27,7 @@
   (lambda (types)
     (let ([new-list (remove* types types-to-check-if-exist)])
       (if (null? new-list)
-          42 ;; Ok - every type exist
+          (void) ;; Ok - every type exist
           (if (null? (cdr new-list))
               (eopl:error 'type-error "No such type: ~s" (car new-list))
               (eopl:error 'type-error "No such types: ~s" new-list))))))
@@ -38,6 +38,7 @@
   (lambda (data-exps env)
     (begin
       (initialize-type-value-id!)
+      (initialize-vctenv!)
       (check-if-types-in-list-exist
        (foldl
         (lambda (d-exp types) (cases data-exp d-exp (a-data-exp (ty _) (cons ty types)))) '() data-exps))
@@ -77,14 +78,53 @@
   (cases val-constr-exp val-constr
     (a-val-constr (val-constr-name b-vars-types)
                   (let* ([fresh-b-vars (generate-fresh-b-vars (length b-vars-types) '())]
-                         [fresh-type-value (gen-fresh-type-value val-constr-name data-type fresh-b-vars b-vars-types)] 
+                         [fresh-type-value (create-type-value val-constr-name data-type fresh-b-vars b-vars-types)] 
                          [proc (create-proc (reverse b-vars-types) (reverse fresh-b-vars) fresh-type-value)])
-                    (extend-env val-constr-name (newref (a-thunk proc (empty-env))) env))))) ;; we don't need for value contructor env so put empty-env
+                    (begin
+                      (extend-vctenv val-constr-name b-vars-types)
+                      (extend-env val-constr-name (newref (a-thunk proc (empty-env))) env)))))) ;; we don't need for value contructor env so put empty-env
 
 
-(define gen-fresh-type-value
+(define create-type-value
   (lambda (val-constr-name data-type b-vars b-vars-types)
-    (let ([fresh-type-value (type-value-exp type-value-id val-constr-name b-vars b-vars-types data-type)])
-          (begin
-            (set! type-value-id (+ type-value-id 1))
-            fresh-type-value))))
+    (let ([type-value (type-value-exp val-constr-name b-vars b-vars-types data-type)])
+      type-value)))
+
+
+;;;;;;;;;;;;;;;;;;; value contructors arguments types environment ;;;;;;;;;;;;;;;;;;;
+
+;; maps name of the value contructor to list of types of arguments it takes
+
+(define-datatype val-constr-types-environment val-constr-types-environment?
+  (empty-vctenv-record)
+  (extended-vctenv-record
+   (val-constr-name symbol?)
+   (arg-types (list-of type?))
+   (vctenv val-constr-types-environment?)))
+
+(define vctenv 'uninitialized)
+(define empty-vctenv '())
+
+(define initialize-vctenv!
+  (lambda ()
+    (set! vctenv empty-vctenv)))
+
+(define extend-vctenv
+  (lambda (val-constr-name arg-types)
+    (set! vctenv (cons (list val-constr-name arg-types) vctenv))))
+
+(define apply-vctenv
+  (lambda (vctenv val-constr-name)
+    (if (null? vctenv)
+      (eopl:error 'get-val-constr-arg-types "Given value constructor doesn't exists: ~s" val-constr-name)
+      (let* ([res (car vctenv)]
+            [name (list-ref res 0)]
+            [types (list-ref res 1)]
+            [saved-vctenv (cdr vctenv)])
+        (if (eqv? val-constr-name name) 
+            types
+            (apply-vctenv saved-vctenv val-constr-name))))))
+
+(define get-val-constr-arg-types
+  (lambda (val-constr-name)
+    (apply-vctenv vctenv val-constr-name)))

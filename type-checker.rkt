@@ -81,7 +81,7 @@
                   (map (lambda (exp1) (check-equal-type! (type-of exp1 tenv) (int-type) exp1)) lst)
                   (int-list-type)))
 
-      (type-value-exp (id val-constr-name b-vars b-vars-types type) type)
+      (type-value-exp (val-constr-name b-vars b-vars-types type) type)
 
       (var-exp (var) (apply-tenv tenv var))
 

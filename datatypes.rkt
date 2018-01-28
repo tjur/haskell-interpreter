@@ -17,7 +17,6 @@
   (list-exp
    (list (list-of expression?)))
   (type-value-exp ;; value which type is a type defined by some data-exp
-   (id number?)
    (val-constr-name symbol?) ;; name of value contructor that creates that value
    (b-vars (list-of symbol?)) ;; b-vars that takes value constr before it returns that value
    (b-vars-types (list-of type?))

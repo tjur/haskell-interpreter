@@ -70,7 +70,7 @@
               #:before-first "["
               #:after-last "]"))
 
-          (type-value-exp (id val-constr-name b-vars b-vars-types ty)
+          (type-value-exp (val-constr-name b-vars b-vars-types ty)
                           (string-append
                            val-constr-name " "
                            (string-join (map symbol->string b-vars) ", " #:before-first "(" #:after-last ")")))
