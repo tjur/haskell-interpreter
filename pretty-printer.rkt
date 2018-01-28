@@ -6,7 +6,7 @@
                   format))
 
 (require "datatypes.rkt")
-(require "store.rkt") ;; for displaying elements of a list
+(require "store.rkt")
 
 
 (provide pretty-print-program pretty-print-exp pretty-print-expval pretty-print-exp-result)
@@ -161,7 +161,6 @@
                  #:before-first "["
                  #:after-last "]"))
 
-      ;; TODO: wypisywanie enva!
       (proc-val (p)
         (cases proc p
           (procedure (bvar body env)
