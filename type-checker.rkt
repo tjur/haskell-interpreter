@@ -138,7 +138,7 @@
                       
                    (type-of letrec-body tenv-for-letrec-body))))
 
-      (missing-case-exp () (any-type))
+      (missing-case-exp (var) (any-type))
 
       (check-data-exp-val-exp (exp val-constr-name) (bool-type))
 

@@ -122,7 +122,7 @@
             ((pretty-exp indents)
               (call-exp (var-exp op) (list exp1 exp2))))
 
-          (missing-case-exp () "<missing-case>")
+          (missing-case-exp (var) "<missing-case>")
 
           (check-data-exp-val-exp (exp1 val-constr-name)
                               (string-append (symbol->string val-constr-name) "? "((pretty-exp indents_1) exp1)))

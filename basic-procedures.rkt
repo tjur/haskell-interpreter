@@ -78,9 +78,15 @@
 (define eval-list-procedure
   (lambda (proc val)
     (match proc
-      ['head (car val)]
-      ['tail (cadr val)]  ;; niby listy trzymamy jako pary, ale tak naprawdę to są to listy (dwu/zero)elementowe
-      ['empty (newref (bool-val (null? val)))]))) ;; TODO: ten newref jest trochę przykry, ale interp czeka na referencję
+      ['head 
+        (if (null? val)
+          (eopl:error 'interpreter-error "head expects non-empty list\n")
+          (car val))]
+      ['tail
+        (if (null? val)
+          (eopl:error 'interpreter-error "tail expects non-empty list\n")
+          (cadr val))]
+      ['empty (newref (bool-val (null? val)))])))
 
 (define list-procedure-types
   (list

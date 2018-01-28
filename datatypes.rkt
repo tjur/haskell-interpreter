@@ -60,7 +60,8 @@
    (op symbol?)
    (exp1 expression?)
    (exp2 expression?))
-  (missing-case-exp)
+  (missing-case-exp
+   (var symbol?))
   (check-data-exp-val-exp
    (expression-to-check expression?)
    (val-constr-name-to-compare symbol?))

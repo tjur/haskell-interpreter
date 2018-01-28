@@ -174,8 +174,8 @@
                       (value-of/k exp1 env
                                   (common-op-cont1 op exp2 env cont)))
 
-      (missing-case-exp ()
-        (eopl:error "Missing declaration case!\n"))
+      (missing-case-exp (var)
+        (eopl:error 'interpreter-error (string-append "Missing declaration case for " (symbol->string var) "\n")))
 
       (check-data-exp-val-exp (exp1 val-constr-name)
                           (value-of/k exp1 env

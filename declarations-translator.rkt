@@ -10,6 +10,7 @@
 (require "datatypes.rkt")
 (require "parser.rkt")
 (require "data-expression.rkt")
+(require "pretty-printer.rkt")
 
 (provide translate-declarations let-without-body->let-exp)
 
@@ -125,7 +126,7 @@
     (string->symbol (string-append "_$" (number->string pattern-var-n)))))
 
 (define get-match-exp
-  (lambda (pattern-var pattern-exps then-bodies else-body)
+  (lambda (declaration-var pattern-var pattern-exps then-bodies else-body)
     (if (null? pattern-exps) else-body
       (let* ([pattern-exp (caar pattern-exps)]
              [pattern-type (cadar pattern-exps)]
@@ -136,7 +137,7 @@
                                 (call-exp (var-exp '==) (var-exp pattern-var))
                                 pattern-exp)
                               then-body
-                              (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)))])
+                              (get-match-exp declaration-var pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)))])
         (cases expression pattern-exp
           (const-num-exp (n)
             (simple-match))
@@ -152,9 +153,9 @@
               (if-exp
                 (call-exp (var-exp 'empty) (var-exp pattern-var))
                 then-body
-                (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body))
+                (get-match-exp declaration-var pattern-var (cdr pattern-exps) (cdr then-bodies) else-body))
 
-            (get-match-exp pattern-var ;; korzystam z unpack-exp ':
+            (get-match-exp declaration-var pattern-var ;; translating to unpack-exp ':
               (cons
                 (list
                   (unpack-exp ': (list (car xs) (list-exp (cdr xs))))
@@ -164,7 +165,7 @@
               else-body)))
 
           (unpack-exp (var args)
-            (let ([next-else-body (get-match-exp pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)])
+            (let ([next-else-body (get-match-exp declaration-var pattern-var (cdr pattern-exps) (cdr then-bodies) else-body)])
               (if (eq? var ':)
                 (if-exp
                   (call-exp (var-exp 'empty) (var-exp pattern-var))
@@ -181,7 +182,7 @@
                       (list '())
                       (list '())
                       (list (call-exp (var-exp 'head) (var-exp pattern-var)))
-                      (get-match-exp head-var (list (list head-arg (int-type)))
+                      (get-match-exp declaration-var head-var (list (list head-arg (int-type)))
                         
                         (list
                           (let-exp
@@ -190,32 +191,44 @@
                             (list '())
                             (list '())
                             (list (call-exp (var-exp 'tail) (var-exp pattern-var)))
-                            (get-match-exp tail-var (list (list tail-arg (int-list-type))) (list then-body) next-else-body)))
+                            (get-match-exp declaration-var tail-var (list (list tail-arg (int-list-type))) (list then-body) next-else-body)))
                         next-else-body))))
 
-                (if-exp
-                  (check-data-exp-val-exp (var-exp pattern-var) var)
+                (let* ([val-constr-arg-types (get-val-constr-arg-types var)]
+                       [val-constr-arg-length (length val-constr-arg-types)]
+                       [args-length (length args)])
 
-                    (foldr
-                      (lambda (i arg then-body)
-                        (let ([new-var (string->symbol (string-append (symbol->string pattern-var) "[" (number->string i) "]"))]
-                              [new-var-type (list-ref (get-val-constr-arg-types var) i)])
-                          (let-exp
-                            (list new-var)
-                            (list new-var-type)
-                            (list '())
-                            (list '())
-                            (list (extract-from-data-exp-val-exp (var-exp pattern-var) i))
-                            (get-match-exp
-                              new-var
-                              (list (list (list-ref args i) new-var-type))
-                              (list then-body)
-                              next-else-body))))
-                      then-body
-                      (build-list (length args) values)
-                      args)
+                  (if (< args-length val-constr-arg-length)
+                    (eopl:error 'syntax-error
+                      (string-append "Too few arguments in " (symbol->string declaration-var) " declaration in " (pretty-print-exp pattern-exp) "\n"))
+                    (if (> args-length val-constr-arg-length)
+                      (eopl:error 'syntax-error
+                        (string-append "Too many arguments in " (symbol->string declaration-var) " declaration in " (pretty-print-exp pattern-exp) "\n"))
 
-                    next-else-body))))
+                      (if-exp
+                        (check-data-exp-val-exp (var-exp pattern-var) var)
+
+                          (foldr
+                            (lambda (i arg then-body)
+                              (let ([new-var (string->symbol (string-append (symbol->string pattern-var) "[" (number->string i) "]"))]
+                                    [new-var-type (list-ref (get-val-constr-arg-types var) i)])
+                                (let-exp
+                                  (list new-var)
+                                  (list new-var-type)
+                                  (list '())
+                                  (list '())
+                                  (list (extract-from-data-exp-val-exp (var-exp pattern-var) i))
+                                  (get-match-exp
+                                    declaration-var
+                                    new-var
+                                    (list (list (list-ref args i) new-var-type))
+                                    (list then-body)
+                                    next-else-body))))
+                            then-body
+                            (build-list (length args) values)
+                            args)
+
+                          next-else-body)))))))
 
           (var-exp (var)
             (let-exp
@@ -228,23 +241,24 @@
 
           (else (eopl:error "impossible!")))))))
 
-(define translate-to-lambdas
-  (lambda (pattern-var pattern-var-n grouped-arguments-list)
-    (if (null? grouped-arguments-list) (missing-case-exp)
+(define translate-bodies
+  (lambda (declaration-var pattern-var pattern-var-n grouped-arguments-list)
+    (if (null? grouped-arguments-list) (missing-case-exp declaration-var)
       (let* ([arg (car grouped-arguments-list)]
              [next-pattern-var (get-pattern-var (+ pattern-var-n 1))]
-             [next-case-body (translate-to-lambdas pattern-var pattern-var-n (cdr grouped-arguments-list))])
+             [next-case-body (translate-bodies declaration-var pattern-var pattern-var-n (cdr grouped-arguments-list))])
         (cases argument arg
           (an-argument (pattern-exps grouped-args-list)
             (let* ([next-bodies (map (lambda (grouped-args)
-                                        (translate-to-lambdas
+                                        (translate-bodies
+                                          declaration-var
                                           next-pattern-var
                                           (+ pattern-var-n 1)
                                           grouped-args)) grouped-args-list)])
-              (get-match-exp pattern-var pattern-exps next-bodies next-case-body)))
+              (get-match-exp declaration-var pattern-var pattern-exps next-bodies next-case-body)))
 
           (ending-argument (pattern-exps bodies)
-            (get-match-exp pattern-var pattern-exps bodies next-case-body)))))))
+            (get-match-exp declaration-var pattern-var pattern-exps bodies next-case-body)))))))
 
 (define declaration-exp->var
   (lambda (declaration)
@@ -284,15 +298,17 @@
   (lambda (declarations)
     (let* ([declarations-grouped (group-declarations-by-var declarations)]
            [groups (map (lambda (group)
-                          (let* ([var-type (car group)]
+                          (let* ([var-and-type (car group)]
+                                 [var-name (car var-and-type)]
+                                 [var-type (cadr var-and-type)]
                                  [declarations (cdr group)]
                                  [args-body-list (map declaration-exp->argsnbody declarations)])
                             (list
-                              (car var-type)
-                              (cadr var-type)
+                              var-name
+                              var-type
                               (build-list (length (caar args-body-list)) get-pattern-var)
                               (map cadr (caar args-body-list))
-                              (start-translations args-body-list))))
+                              (start-translations var-name args-body-list))))
                         declarations-grouped)]
            [joined (join5 groups)])
       (no-body-let
@@ -303,14 +319,15 @@
         (list-ref joined 4)))))
 
 (define start-translations
-  (lambda (args-body-list)
+  (lambda (var-name args-body-list)
     (let ([first-args (caar args-body-list)])
       (if (null? first-args)
         (cdar args-body-list)
         (lambdaize-arguments
           first-args
           0
-          (translate-to-lambdas
+          (translate-bodies
+            var-name
             (get-pattern-var 0)
             0
             (group-arguments args-body-list)))))))
