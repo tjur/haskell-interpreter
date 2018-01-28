@@ -59,4 +59,30 @@
        id 420"
        "420")
 
+    (test-declaration-2
+      "(tribonacci :: int) (0 :: int) = 0;
+       (tribonacci :: int) (1 :: int) = 1;
+       (tribonacci :: int) (2 :: int) = 1;
+       (tribonacci :: int) (n :: int) = tribonacci (n - 1) + (tribonacci (n - 2)) + (tribonacci (n - 3));
+
+       tribonacci 7"
+       "24")
+
+    (test-declaration-3
+      "(take :: int) (x:xs :: int-list) (0 :: int) = x;
+       (take :: int) (x:xs :: int-list) (n :: int) = take xs (n - 1);
+
+       take [0, 1, 2, 3, 4, 5] 4"
+       "4")
+
+    (test-declaration-4
+      "(even :: bool) (0 :: int) = True;
+       (even :: bool) (n :: int) = odd (n - 1);
+
+       (odd :: bool) (0 :: int) = False;
+       (odd :: bool) (n :: int) = even (n - 1);
+
+       even 27"
+       "False")
+
     ))
