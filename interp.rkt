@@ -471,6 +471,7 @@
 (run "data Tree = Leaf | Node Tree int Tree;
 
       (sumTree :: int) (Leaf :: Tree) = 0;
+      (sumTree :: int) (Node l x r :: Tree) = sumTree l + x + (sumTree r);
 
       sumTree (Node Leaf 10 (Node Leaf 5 Leaf))")
 
