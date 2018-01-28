@@ -1,0 +1,12 @@
+data Number = Zero | One | Two;
+data List = Empty | Cons Number List;
+
+(map :: List) (fn :: Number -> Number) (Empty :: List) = Empty;
+(map :: List) (fn :: Number -> Number) (Cons n xs :: List) = Cons (fn n) (map fn xs);
+
+(add1 :: Number) (Zero :: Number) = One;
+(add1 :: Number) (One :: Number) = Two;
+(add1 :: Number) (Two :: Number) = Zero;
+
+(Cons One (Cons One (Cons Zero (Cons Two Empty))));
+map add1 (Cons One (Cons One (Cons Zero (Cons Two Empty))))
