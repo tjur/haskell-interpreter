@@ -1,0 +1,13 @@
+(take :: int-list) (x:xs :: int-list) (0 :: int) = [x];
+(take :: int-list) (x:xs :: int-list) (n :: int) = x:(take xs (n - 1));
+
+(drop :: int-list) (0 :: int) (xs :: int-list) = xs;
+(drop :: int-list) (n :: int) (x:xs :: int-list) = drop (n - 1) xs;
+
+(addLists :: int-list) (x:xs :: int-list) (y:ys :: int-list) = (x + y):(addLists xs ys);
+
+(fibs :: int-list) = 0:(1:(addLists fibs (drop 1 fibs)));
+
+take fibs 100;
+take fibs 100;
+take fibs 100
