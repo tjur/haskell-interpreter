@@ -273,38 +273,3 @@
             (scan&parse prog)))
         (newline))
       progs)))
-
-
-(define programs-list
-  '(
-    "let f a b = let z = a + b in z
-         g y s = s+y
-         y = 42 in (f 5)"
-
-    "\\x y -> (x + y)"
-
-    "data Tree = Empty | Leaf Int | Node Tree Tree;
-     data Bin = Zero | One"
-
-    "fact 0 = 1;
-     fact n = n * (fact (n - 1))"
-
-    "rev acc [] = acc; 
-     rev acc x:xs = rev (x:acc) xs"
-
-    "f Leaf = 0;
-     f (Node l x r) = (f l) + x + (f r)"
-
-    "add1 = (+) 1"
-
-    "if if True
-        then 1
-        else 0
-     then let f a b = let z = a + b in z
-         g y s = s+y
-         y = 42 in (f 5)
-     else ()"
-  ))
-
-
-;;; (pretty-print-programs programs-list)

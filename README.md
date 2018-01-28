@@ -19,6 +19,10 @@ data PairInt = Pair int int
 data Bin = Zero | One
 ```
 
+```haskell
+data Maybe = Nothing | Just int
+```
+
 All data types are extracted from the program's source code before running any of the expression and therefore they can be later used for type annotations in program expressions.
 
 ### 2. Declarations

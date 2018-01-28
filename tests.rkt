@@ -127,4 +127,51 @@
        [0, 1, 2, 3, 4, 5] !! 4"
        "4")
 
+    (test-declarations-6
+     "(len :: int) ([] :: int-list) = 0;
+      (len :: int) (x:(y:xs) :: int-list) = 2 + (len xs);
+      (len :: int) (x:xs :: int-list) = 1 + (len xs);
+
+      len [1, 2, 3, 4, 5, 10]"
+     "6")
+
+    ;; algebraic data types
+    (test-data-1
+     "data PairBin = Pair Bin Bin;
+      data Bin = Zero | One;
+
+      Pair Zero One"
+     "Pair (Zero One)")
+
+    (test-data-2
+     "data Bin = Zero | One;
+      data PairInt = Pair int int;
+
+     (Bin-to-int :: int) (Zero :: Bin) = 0;
+     (Bin-to-int :: int) (One :: Bin) = 1;
+
+     Pair (Bin-to-int One) (Bin-to-int Zero)"
+     "Pair (1 0)")
+
+    (test-data-3
+     "data Tree = Leaf | Node Tree int Tree;
+
+     (sumTree :: int) (Leaf :: Tree) = 0;
+     (sumTree :: int) (Node l x r :: Tree) = sumTree l + x + (sumTree r);
+
+     sumTree (Node (Node (Node Leaf 1 Leaf) 3 Leaf) 10 (Node Leaf 5 Leaf))"
+     "19")
+
+    (test-data-4
+     "data Tree = Leaf | Node Tree int Tree;
+
+      let (f :: Tree) (x :: int) = (Node Leaf x Leaf)
+       in (f 42)" "Node (Leaf 42 Leaf)")
+
+    (test-data-5
+     "data Tree = Leaf | Node Tree int Tree;
+
+      let (f :: Tree2) (x :: int) = (Node Leaf x Leaf)
+       in (f 42)" error)
+
     ))
