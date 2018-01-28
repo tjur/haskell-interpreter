@@ -19,6 +19,10 @@ data PairInt = Pair int int
 data Bin = Zero | One
 ```
 
+```haskell
+data Maybe = Nothing | Just int
+```
+
 All data types are extracted from the program's source code before running any of the expression and therefore they can be later used for type annotations in program expressions.
 
 ### 2. Declarations
@@ -62,8 +66,8 @@ Examples of declarations with pattern matching:
 ```
 
 ```haskell
-(take :: int) (x:xs :: int-list) (0 :: int) = x;
-(take :: int) (x:xs :: int-list) (n :: int) = take xs (n - 1)
+(take :: int-list) (x:xs :: int-list) (0 :: int) = [];
+(take :: int-list) (x:xs :: int-list) (n :: int) = x:(take xs (n - 1))
 ```
 
 ```haskell
@@ -235,6 +239,7 @@ To run tests from tests.rkt run command: `racket run-tests.rkt`
 To run a file with program just run command: `racket run.rkt <path-to-file-with-program>`
 
 ## Possible future improvements
+* Improve the quality of printed errors
 * Change associativity of `:` operator to right
 * Add priority to arithmetic operators
 * Add bool operators
