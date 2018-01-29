@@ -1,34 +1,26 @@
 (isPrime :: bool) (n :: int) =
-                            let (aux :: bool) (i :: int) =
-                                                            if n == i
-                                                            then True
-                                                            else if n `mod` i == 0
-                                                                then False
-                                                                else (aux (i + 1))
-                            in (aux 2);
+    let (aux :: bool) (i :: int) =
+            if n == i
+            then True
+            else if n `mod` i == 0
+                then False
+                else (aux (i + 1))
+    in (aux 2);
 
 (primes :: int-list) =
-                    let (aux :: int-list) (i :: int) =
-                                                        if isPrime i
-                                                        then i:(aux (i + 1))
-                                                        else (aux (i + 1))
-                    in (aux 2);
+    let (aux :: int-list) (i :: int) =
+            if isPrime i
+            then i:(aux (i + 1))
+            else (aux (i + 1))
+    in (aux 2);
 
-(list-ref :: int) (xs :: int-list) (i :: int) =
-                                                if i == 0
-                                                then head xs
-                                                else (list-ref (tail xs) (i - 1));
+(take :: int-list) (x:xs :: int-list) (0 :: int) = [];
+(take :: int-list) (x:xs :: int-list) (n :: int) = x:(take xs (n - 1));
 
-(take :: int-list) (lst :: int-list) (n :: int) =
-    if n == 0
-        then []
-        else ((head lst) : (take (tail lst) (n - 1)));
-
-
-(take primes 30);
-(take primes 30);
-(take primes 30);
-(take primes 30);
-(take primes 30);
-(take primes 30);
-(take primes 30)
+take primes 30;
+take primes 30;
+take primes 30;
+take primes 30;
+take primes 30;
+take primes 30;
+take primes 30

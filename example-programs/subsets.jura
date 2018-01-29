@@ -9,6 +9,6 @@ data List = Empty | Cons int-list List;
 (subsets :: List) ([] :: int-list) = Cons [] Empty;
 (subsets :: List) (x:xs :: int-list) =
   let (result :: List) = (subsets xs)
-  in (result ++ (map (\(xs :: int-list) -> (x:xs)) result));
+  in (result ++ (map \(xs :: int-list) -> (x:xs) result));
 
 subsets [1, 2, 3]

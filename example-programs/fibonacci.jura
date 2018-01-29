@@ -6,8 +6,6 @@
 
 (zipWith :: int-list) (fn :: int -> (int -> int)) (x:xs :: int-list) (y:ys :: int-list) = (x `fn` y):(zipWith fn xs ys);
 
-(addLists :: int-list) (x:xs :: int-list) (y:ys :: int-list) = (x + y):(addLists xs ys);
-
 (fibs :: int-list) = 0:(1:(zipWith (+) fibs (drop 1 fibs)));
 
 take fibs 100;
