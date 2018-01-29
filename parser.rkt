@@ -96,7 +96,8 @@
     [<operator-with-type> [(OPENB OPENB <operator> CLOSEB DOUBLECOLON <type> CLOSEB) (list $3 $6)]]
 
     ;; types
-    [<type> [(<int-type>) (int-type)]
+    [<type> [(OPENB <type> CLOSEB) $2]
+            [(<int-type>) (int-type)]
             [(<bool-type>) (bool-type)]
             [(<unit-type>) (unit-type)]
             [(<int-list-type>) (int-list-type)]
