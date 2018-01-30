@@ -9,8 +9,7 @@
     "build-server": "cd server && tsc",
     "tsc:w": "cd server && tsc --watch",
     "parcel": "parcel .\\client\\src\\index.html --out-dir dist\\public\\",
-    "parcel:b": "parcel build .\\client\\src\\index.html --out-dir dist\\public\\",
-    "heroku-postbuild": "npm run build"
+    "parcel:b": "parcel build .\\client\\src\\index.html --out-dir dist\\public\\"
   },
   "author": "",
   "license": "ISC",

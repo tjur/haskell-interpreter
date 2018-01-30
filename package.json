@@ -1,0 +1,8 @@
+{
+  "name": "jura-interpreter",
+  "version": "0.0.1",
+  "scripts": {
+    "postinstall": "npm install --prefix page",
+    "heroku-postbuild": "npm run build --prefix page"
+  }
+}
