@@ -1,0 +1,56 @@
+@import 'reset-css/reset.css';
+@import './prismjs/prism.css';
+@import './codeflask/src/codeflask.css';
+
+html * {
+  box-sizing: border-box;
+}
+
+body {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  font-size: 30px;
+}
+
+.header {
+  width: 100%;
+  padding: 20px;
+  font-family: 'Roboto';
+  background-color: #446CB3;
+  color: white;
+
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+#code-editor {
+  width: 100%;
+  height: 100%;
+}
+
+#code-output {
+  width: 800px;
+  height: 100%;
+  background-color: #22313F;
+  color: white;
+  font-family: Lucida Console;
+  font-size: 16px;
+  padding: 16px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.CodeFlask__textarea,
+.CodeFlask__pre, 
+code[class*="language-"], 
+pre[class*="language-"]{
+  font-size: 16px;
+}

@@ -13,4 +13,7 @@ compiled
 
 # End of https://www.gitignore.io/api/racket
 
+.cache
 .vscode
+dist
+node_modules

@@ -1,0 +1,27 @@
+{
+  "name": "jura-language",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd dist && node main.js",
+    "build": "npm run build-server && npm run parcel:b",
+    "build-server": "cd server && tsc",
+    "tsc:w": "cd server && tsc --watch",
+    "parcel": "parcel .\\client\\src\\index.html --out-dir dist\\public\\",
+    "parcel:b": "parcel build .\\client\\src\\index.html --out-dir dist\\public\\",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.11.0",
+    "@types/node": "^9.4.0",
+    "@types/socket.io": "^1.4.31",
+    "@types/socket.io-client": "^1.4.32",
+    "express": "^4.16.2",
+    "reset-css": "^2.2.1",
+    "socket.io": "^2.0.4",
+    "typescript": "^2.6.2"
+  }
+}
