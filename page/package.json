@@ -10,7 +10,7 @@
     "tsc:w": "cd server && tsc --watch",
     "parcel": "parcel .\\client\\src\\index.html --out-dir dist\\public\\",
     "parcel:b": "parcel build .\\client\\src\\index.html --out-dir dist\\public\\",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "heroku-postbuild": "npm run build"
   },
   "author": "",
   "license": "ISC",
