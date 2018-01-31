@@ -239,6 +239,8 @@ To run tests from tests.rkt run command: `racket run-tests.rkt`
 To run a file with program just run command: `racket run.rkt <path-to-file-with-program>`
 
 ## Possible future improvements
+* Polymorphism
+* Type inference
 * Improve the quality of printed errors
 * Change associativity of `:` operator to right
 * Add priority to arithmetic operators
