@@ -41,7 +41,7 @@ Simple declaration examples:
 ```
 
 ```haskell
-(add1 :: int) = (+) 1
+(add1 :: int -> int) = (+) 1
 ```
 
 Declarations support pattern matching on arguments, such as matching to:
